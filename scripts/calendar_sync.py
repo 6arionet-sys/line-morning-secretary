@@ -218,6 +218,11 @@ def categorize_events(events, today, tomorrow, week_end):
             w_kanji = weekday_kanji[d_val.weekday()]
             week_list.append(f"{d_val.month}/{d_val.day}（{w_kanji}） {summary}")
     
+    event_counts = {}
+    for dt, is_all_day, summary in cleaned:
+        d_val = dt.date() if isinstance(dt, datetime) else dt
+        event_counts[d_val] = event_counts.get(d_val, 0) + 1
+    
     # 制限件数と「ほかN件」の処理
     def format_capped(items, limit):
         if len(items) <= limit:
@@ -230,5 +235,6 @@ def categorize_events(events, today, tomorrow, week_end):
     return {
         "today": format_capped(today_list, 5),
         "tomorrow": format_capped(tomorrow_list, 3),
-        "week": format_capped(week_list, 5)
+        "week": format_capped(week_list, 5),
+        "event_counts": event_counts
     }
