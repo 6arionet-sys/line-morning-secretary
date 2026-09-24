@@ -247,6 +247,10 @@ def fetch_weather_data(area_code, sub_area="東部", temp_area="横浜", fishing
             rain_notice = "昼過ぎから雨の予報"
         elif pops_by_period["18-24"] != "-" and int(re.findall(r'\d+', pops_by_period["18-24"])[0]) >= 40:
             rain_notice = "夜から雨が降りそう"
+        else:
+            rain_notice = "雨が降る可能性あり"
+    else:
+        rain_notice = "傘なしでお出かけOK"
     
     # 風と波の解析
     wind_icon, wind_label = parse_direction(raw_wind)

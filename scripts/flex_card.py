@@ -79,30 +79,37 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         curr_d = sunday + timedelta(days=i)
         is_today = (curr_d == now.date())
         ev_cnt = event_counts.get(curr_d, 0)
-        dots = "●●" if ev_cnt >= 2 else ("●" if ev_cnt == 1 else " ")
         
         bg = "#FFFFFF" if is_today else "#FFFFFF33"
         c = "#E03131" if is_today else "#FFFFFF"
-        bw = "2px" if is_today else "0px"
-        bc = "#E03131" if is_today else "#00000000"
         
-        week_cells.append({
+        cell_contents = [
+            {"type": "text", "text": WEEKDAY_SUNDAY_FIRST_JA[i], "size": "xxs", "weight": "bold", "color": c, "align": "center"},
+            {"type": "text", "text": str(curr_d.day), "size": "xs", "weight": "bold", "color": c, "align": "center", "margin": "xs"}
+        ]
+        if ev_cnt > 0:
+            dots_str = "●●" if ev_cnt >= 2 else "●"
+            cell_contents.append({"type": "text", "text": dots_str, "size": "xxs", "color": c, "align": "center"})
+        else:
+            # プレースホルダーで高さを揃える
+            cell_contents.append({"type": "box", "layout": "vertical", "height": "14px", "contents": []})
+        
+        cell_dict = {
             "type": "box",
             "layout": "vertical",
             "backgroundColor": bg,
             "cornerRadius": "6px",
-            "borderWidth": bw,
-            "borderColor": bc,
             "paddingTop": "4px",
             "paddingBottom": "4px",
             "alignItems": "center",
             "flex": 1,
-            "contents": [
-                {"type": "text", "text": WEEKDAY_SUNDAY_FIRST_JA[i], "size": "xxs", "weight": "bold", "color": c, "align": "center"},
-                {"type": "text", "text": str(curr_d.day), "size": "xs", "weight": "bold", "color": c, "align": "center", "margin": "xs"},
-                {"type": "text", "text": dots, "size": "xxs", "color": c, "align": "center"}
-            ]
-        })
+            "contents": cell_contents
+        }
+        if is_today:
+            cell_dict["borderWidth"] = "2px"
+            cell_dict["borderColor"] = "#E03131"
+        
+        week_cells.append(cell_dict)
     
     header = {
         "type": "box",
@@ -120,7 +127,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{month}.{day} {w_en}", "size": "sm", "weight": "bold", "color": "#FFFFFFE6"},
+                    {"type": "text", "text": f"{month}.{day} {w_en}", "size": "sm", "weight": "bold", "color": "#FFFFFF"},
                     {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "24px", "align": "end"}
                 ]
             },
@@ -134,8 +141,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     # --- [2] 天気カード ---
     pops = weather_data.get("pops", {})
     weather_periods = weather_data.get("weather_by_period", {})
-    rain_notice = weather_data.get("rain_notice", "夜から雨が降りそう" if max_pop >= 40 else "傘なしでお出かけOK")
-    short_w = weather_data.get("short_weather", "晴れ")
+    rain_notice = (weather_data.get("rain_notice", "") or "").strip()
+    if not rain_notice:
+        rain_notice = "夜から雨が降りそう" if max_pop >= 40 else "傘なしでお出かけOK"
+    short_w = (weather_data.get("short_weather", "") or "").strip() or "晴れ"
     
     weather_contents = [
         {
@@ -145,7 +154,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "contents": [
                 {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "20px"},
                 {"type": "text", "text": " 天気", "weight": "bold", "size": "md", "color": "#8A4B1A"},
-                {"type": "text", "text": config.get("area_name", "横浜"), "size": "xs", "color": "#888888", "align": "end"}
+                {"type": "text", "text": config.get("area_name", "横浜") or "横浜", "size": "xs", "color": "#888888", "align": "end"}
             ]
         },
         # 天気メイン枠
@@ -217,9 +226,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "cornerRadius": "3px",
                     "margin": "xs",
                     "contents": [
-                        {"type": "box", "layout": "vertical", "backgroundColor": "#FFB566", "flex": 1},
-                        {"type": "box", "layout": "vertical", "backgroundColor": "#DDE1E8", "flex": 1},
-                        {"type": "box", "layout": "vertical", "backgroundColor": "#6AA6EC", "flex": 1}
+                        {"type": "box", "layout": "vertical", "backgroundColor": "#FFB566", "flex": 1, "contents": []},
+                        {"type": "box", "layout": "vertical", "backgroundColor": "#DDE1E8", "flex": 1, "contents": []},
+                        {"type": "box", "layout": "vertical", "backgroundColor": "#6AA6EC", "flex": 1, "contents": []}
                     ]
                 },
                 {
@@ -432,8 +441,26 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     
     if cal_today:
         for ev in cal_today:
+            ev = (ev or "").strip()
+            if not ev:
+                continue
+            if ev.startswith("ほか"):
+                cal_contents.append({
+                    "type": "box",
+                    "layout": "horizontal",
+                    "margin": "xs",
+                    "contents": [
+                        {"type": "text", "text": ev, "size": "xs", "color": "#888888", "margin": "md"}
+                    ]
+                })
+                continue
             parts = ev.split(" ", 1)
-            t_str, title_str = (parts[0], parts[1]) if len(parts) > 1 else ("", ev)
+            if len(parts) > 1:
+                t_str = parts[0].strip() or "終日"
+                title_str = parts[1].strip() or "予定あり"
+            else:
+                t_str = "終日"
+                title_str = ev
             cal_contents.append({
                 "type": "box",
                 "layout": "horizontal",
@@ -460,8 +487,26 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "width": "38px"
         })
         for ev in cal_tomorrow:
+            ev = (ev or "").strip()
+            if not ev:
+                continue
+            if ev.startswith("ほか"):
+                cal_contents.append({
+                    "type": "box",
+                    "layout": "horizontal",
+                    "margin": "xs",
+                    "contents": [
+                        {"type": "text", "text": ev, "size": "xs", "color": "#888888", "margin": "md"}
+                    ]
+                })
+                continue
             parts = ev.split(" ", 1)
-            t_str, title_str = (parts[0], parts[1]) if len(parts) > 1 else ("", ev)
+            if len(parts) > 1:
+                t_str = parts[0].strip() or "終日"
+                title_str = parts[1].strip() or "予定あり"
+            else:
+                t_str = "終日"
+                title_str = ev
             cal_contents.append({
                 "type": "box",
                 "layout": "horizontal",
@@ -486,6 +531,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "width": "68px"
         })
         for ev in cal_week:
+            ev = (ev or "").strip()
+            if not ev:
+                continue
             cal_contents.append({
                 "type": "box",
                 "layout": "horizontal",
@@ -540,9 +588,12 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         
         ai_hobbies = {h.get("name"): h for h in ai_summary.get("hobbies", [])}
         for spot in fishing_spots:
-            s_name = spot.get("name", "城ヶ島")
+            s_name = (spot.get("name") or "城ヶ島").strip() or "城ヶ島"
+            # 木更津は除外（城ヶ島のみ表示）
+            if "木更津" in s_name:
+                continue
             sc = ai_hobbies.get(s_name, {}).get("score", 4)
-            cm = ai_hobbies.get(s_name, {}).get("comment", "朝は穏やか。昼から風が強まるので早めに")
+            cm = (ai_hobbies.get(s_name, {}).get("comment") or "").strip() or "朝は穏やか。昼から風が強まるので早めに"
             
             spot_bg = "#EEFAFE" if sc >= 3 else "#FAFAFA"
             spot_border = "#8FD3EA" if sc >= 3 else "#D2D2D2"
@@ -554,6 +605,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             is_high = spot.get("is_high_wave", False)
             w_bg = "#E03131" if is_high else "#E1F0FA"
             w_c = "#FFFFFF" if is_high else "#0C5A75"
+            
+            w_lbl = (spot.get('wind_label') or "-").strip() or "-"
+            wv_lbl = (spot.get('wave_label') or "-").strip() or "-"
             
             fish_contents.append({
                 "type": "box",
@@ -591,7 +645,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "alignItems": "center",
                                 "contents": [
                                     {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "10px"},
-                                    {"type": "text", "text": f" {spot.get('wind_label', '-')}", "size": "xxs", "color": "#495057"}
+                                    {"type": "text", "text": f" {w_lbl}", "size": "xxs", "color": "#495057"}
                                 ]
                             },
                             {
@@ -603,7 +657,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "alignItems": "center",
                                 "contents": [
                                     {"type": "image", "url": get_icon_url("wave", repo_name), "size": "10px"},
-                                    {"type": "text", "text": f" {spot.get('wave_label', '-')}", "size": "xxs", "weight": "bold" if is_high else "regular", "color": w_c}
+                                    {"type": "text", "text": f" {wv_lbl}", "size": "xxs", "weight": "bold" if is_high else "regular", "color": w_c}
                                 ]
                             }
                         ]

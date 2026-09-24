@@ -76,7 +76,7 @@ def send_line_message(token, user_id, message_payload):
     
     req = urllib.request.Request(
         url,
-        data=json.dumps(body).encode('utf-8'),
+        data=json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8'),
         headers=headers,
         method="POST"
     )
