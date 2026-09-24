@@ -14,6 +14,11 @@
       "name": "城ヶ島",
       "area_code": "140000",
       "sub_area": "東部"
+    },
+    {
+      "name": "木更津",
+      "area_code": "120000",
+      "sub_area": "北西部"
     }
   ],
   "weekly_schedule": {
