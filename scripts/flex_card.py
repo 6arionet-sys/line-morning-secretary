@@ -224,29 +224,47 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         rain_notice = "夜から雨が降りそう" if max_pop >= 40 else "傘なしでお出かけOK"
     short_w = (weather_data.get("short_weather", "") or "").strip() or "晴れ"
     
-    # 天気グラデーション判定（しっかり伝わる濃いめのトーン）
-    if ("晴" in short_w) and ("くもり" in short_w or "曇" in short_w):
-        wbox_start, wbox_end, wbox_border = "#FFD8A8", "#CED4DA", "#ADB5BD"
-        second_w_icon = "cloudy"
-    elif ("晴" in short_w) and ("雨" in short_w or max_pop >= 40):
-        wbox_start, wbox_end, wbox_border = "#FFD8A8", "#A5D8FF", "#74C0FC"
+    # 天気グラデーション判定（案3：ゴールデンアンバーテーマ）
+    w_clean = short_w.replace("一時", "時々")
+    if ("晴" in w_clean) and ("くもり" in w_clean or "曇" in w_clean):
+        pos_s = w_clean.find("晴")
+        pos_c = min([w_clean.find(k) for k in ["くもり", "曇"] if k in w_clean])
+        if pos_s < pos_c:
+            # 晴れのち曇り / 晴れ時々曇り
+            wbox_start, wbox_end, wbox_border = "#FFD43B", "#E9ECEF", "#CED4DA"
+            second_w_icon = "cloudy"
+        else:
+            # 曇りのち晴れ / 曇り時々晴れ
+            wbox_start, wbox_end, wbox_border = "#E9ECEF", "#FFD43B", "#FCC419"
+            second_w_icon = "sunny"
+    elif ("晴" in w_clean) and ("雨" in w_clean):
+        pos_s = w_clean.find("晴")
+        pos_r = w_clean.find("雨")
+        if pos_s < pos_r:
+            # 晴れのち雨
+            wbox_start, wbox_end, wbox_border = "#FFD43B", "#99E9F2", "#66D9E8"
+            second_w_icon = "rainy"
+        else:
+            # 雨のち晴れ
+            wbox_start, wbox_end, wbox_border = "#99E9F2", "#FFD43B", "#66D9E8"
+            second_w_icon = "sunny"
+    elif ("くもり" in w_clean or "曇" in w_clean) and ("雨" in w_clean):
+        # 曇りのち雨
+        wbox_start, wbox_end, wbox_border = "#DEE2E6", "#A5D8FF", "#74C0FC"
         second_w_icon = "rainy"
-    elif ("くもり" in short_w or "曇" in short_w) and ("晴" in short_w):
-        wbox_start, wbox_end, wbox_border = "#CED4DA", "#FFD8A8", "#FFA94D"
-        second_w_icon = "sunny"
-    elif "雨" in short_w or max_pop >= 40:
-        wbox_start, wbox_end, wbox_border = "#D0EBFF", "#74C0FC", "#4DABF7"
+    elif "雨" in w_clean or max_pop >= 40:
+        wbox_start, wbox_end, wbox_border = "#E7F5FF", "#A5D8FF", "#74C0FC"
         second_w_icon = "rainy"
-    elif "くもり" in short_w or "曇" in short_w:
-        wbox_start, wbox_end, wbox_border = "#E9ECEF", "#CED4DA", "#ADB5BD"
+    elif "くもり" in w_clean or "曇" in w_clean:
+        wbox_start, wbox_end, wbox_border = "#F8F9FA", "#DEE2E6", "#CED4DA"
         second_w_icon = "cloudy"
     else:
-        wbox_start, wbox_end, wbox_border = "#FFE8CC", "#FFA94D", "#FF922B"
+        wbox_start, wbox_end, wbox_border = "#FFE066", "#FF922B", "#F76707"
         second_w_icon = "sunny"
     
     def get_seg_colors(w_type):
         if w_type == "sunny":
-            return "#FFA94D", "#E8590C"
+            return "#FFD43B", "#F76707"
         elif w_type == "rainy":
             return "#74C0FC", "#1971C2"
         elif w_type == "snowy":
