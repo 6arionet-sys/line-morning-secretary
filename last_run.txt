@@ -1,4 +1,3 @@
-Timestamp: 2026-09-24 22:02:41 JST
+Timestamp: 2026-09-24 22:17:20 JST
 Success: True
-Result: Flex FAILED (400): {"message":"A message (messages[0]) in the request body is invalid","details":[{"message":"must be non-empty text","property":"/body/contents/0/contents/0/contents/1/contents/1/contents/2/text"},{"message":"must be specified","property":"/body/contents/0/contents/0/contents/3/contents/1/contents/0/contents"},{"message":"must be specified","property":"/body/contents/0/contents/0/contents/3/contents/1/contents/1/contents"},{"message":"must be specified","property":"/body/contents/0/contents/0/contents/3/contents/1/contents/2/contents"}]}
-Result: Fallback text sent to U69254: Status 200
+Result: Flex message sent to U69254: Status 200
