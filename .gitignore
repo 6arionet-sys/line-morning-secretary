@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+last_flex.json
+sample_flex.json
+scratch/
+.vscode/
+.idea/
+
+# memo
+line-morning-secretary-spec.md
+line-morning-secretary-change-2.md

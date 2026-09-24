@@ -1,0 +1,44 @@
+{
+  "area_code": "140000",
+  "area_name": "横浜",
+  "sub_area": "東部",
+  "temp_area": "横浜",
+  "hobbies": [
+    {
+      "name": "釣り",
+      "icon": "fish"
+    }
+  ],
+  "fishing_spots": [
+    {
+      "name": "城ヶ島",
+      "area_code": "140000",
+      "sub_area": "東部"
+    }
+  ],
+  "weekly_schedule": {
+    "日": null,
+    "月": {
+      "label": "燃えるゴミの日",
+      "short": "燃える",
+      "icon": "flame"
+    },
+    "火": null,
+    "水": {
+      "label": "瓶・缶・ペットボトルの日",
+      "short": "缶・瓶",
+      "icon": "bottle"
+    },
+    "木": {
+      "label": "燃えるゴミの日",
+      "short": "燃える",
+      "icon": "flame"
+    },
+    "金": null,
+    "土": {
+      "label": "資源ごみの日",
+      "short": "資源",
+      "icon": "recycle"
+    }
+  }
+}
