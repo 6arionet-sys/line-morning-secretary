@@ -25,7 +25,7 @@ def get_icon_url(icon_name, repo_name=None):
 def create_3d_box(inner_contents, border_color="#B85A0E", bg_color="#FFFFFF", shadow_color=None, padding="14px", margin="md"):
     """
     立体感（3Dポップスタイル）のあるカードコンポーネントを作成する。
-    右下に濃いシャドウカラーの余白を設けることで、浮き出たようなポップな立体感を再現。
+    外枠とシャドウカラーで浮き出たようなポップな立体感を再現。
     """
     if not shadow_color:
         shadow_color = border_color
@@ -54,7 +54,7 @@ def create_3d_box(inner_contents, border_color="#B85A0E", bg_color="#FFFFFF", sh
 
 def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_name=None):
     """
-    視認性を大幅に強化したリッチなLINE Flex Messageを生成する。
+    視認性とデザイン性を極限まで高めたLINE Flex Messageを生成する。
     """
     now_jst = datetime.now(JST)
     month = now_jst.month
@@ -69,25 +69,76 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     # 1. ヘッダー配色（天気に合わせて変化）
     main_type = weather_data.get("main_weather_type", "sunny")
     if main_type == "rainy":
-        header_bg_start = "#3A7BD5"
-        header_bg_end = "#2F54EB"
+        header_bg_start = "#1E3C72"
+        header_bg_end = "#2A5298"
         header_icon = "rainy"
     elif main_type == "cloudy":
-        header_bg_start = "#757F9A"
-        header_bg_end = "#535E73"
+        header_bg_start = "#4B6CB7"
+        header_bg_end = "#182848"
         header_icon = "cloudy"
     elif main_type == "snowy":
-        header_bg_start = "#6DD5ED"
-        header_bg_end = "#2193B0"
+        header_bg_start = "#3A6073"
+        header_bg_end = "#3A7BD5"
         header_icon = "snowy"
     else:  # sunny
-        header_bg_start = "#FF8C42"
-        header_bg_end = "#FF5E7E"
+        header_bg_start = "#FF512F"
+        header_bg_end = "#DD2476"
         header_icon = "sunny"
     
-    # altTextの生成
-    trash_short_text = f"今日は{today_trash['label']}" if today_trash else "ゴミ出しなし"
-    alt_text = f"{month}/{day}（{w_ja}）{weather_data.get('short_weather', '晴れ')} {weather_data.get('temp_max', '--')}℃ {trash_short_text}"
+    # 傘と洗濯の判定
+    max_pop = weather_data.get("max_pop", 0)
+    
+    # 傘
+    if max_pop >= 50:
+        umb_title = "傘が必要！"
+        umb_sub = f"降水確率 {max_pop}%・雨具を"
+        umb_bg = "#228BE6"
+        umb_color = "#FFFFFF"
+        umb_icon = "umbrella"
+        umb_short = "傘必要"
+    elif max_pop >= 30:
+        umb_title = "折りたたみ傘"
+        umb_sub = f"降水確率 {max_pop}%・念のため"
+        umb_bg = "#E7F5FF"
+        umb_color = "#1971C2"
+        umb_icon = "umbrella_small"
+        umb_short = "折りたたみ傘"
+    else:
+        umb_title = "傘はいらない"
+        umb_sub = f"降水確率 {max_pop}%・安心です"
+        umb_bg = "#FFF3BF"
+        umb_color = "#D97706"
+        umb_icon = "umbrella_off"
+        umb_short = "傘不要"
+    
+    # 洗濯
+    laundry_info = weather_data.get("laundry", {})
+    laundry_st = laundry_info.get("status", "一日中OK")
+    if "一日中" in laundry_st:
+        lnd_title = "外干し日和！"
+        lnd_sub = "一日中よく乾きます"
+        lnd_bg = "#D3F9D8"
+        lnd_color = "#2B8A3E"
+        lnd_icon = "hanger"
+        lnd_short = "外干しOK"
+    elif "6〜18" in laundry_st or "OK" in laundry_st:
+        lnd_title = "夕方までOK"
+        lnd_sub = "夕方には取り込みを"
+        lnd_bg = "#FFF9DB"
+        lnd_color = "#E67700"
+        lnd_icon = "hanger"
+        lnd_short = "夕方まで干せる"
+    else:
+        lnd_title = "部屋干し推奨"
+        lnd_sub = "湿気や雨にご注意を"
+        lnd_bg = "#F1F3F5"
+        lnd_color = "#495057"
+        lnd_icon = "home"
+        lnd_short = "部屋干し"
+    
+    # altTextの生成（通知画面で劇的な変化がわかるようにする！）
+    trash_str = f"【{today_trash['label']}】" if today_trash else "【ゴミ出しなし】"
+    alt_text = f"【朝の秘書】{month}/{day}({w_ja}) {config.get('area_name', '横浜')} {weather_data.get('temp_max', '--')}℃ / {umb_short} / {lnd_short} / {trash_str}"
     
     # --- [A] ヘッダー ---
     header_component = {
@@ -113,18 +164,18 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                             {
                                 "type": "box",
                                 "layout": "horizontal",
-                                "backgroundColor": "#3A2A1E",
+                                "backgroundColor": "#1A1A1A",
                                 "cornerRadius": "8px",
                                 "paddingStart": "10px",
                                 "paddingEnd": "10px",
-                                "paddingTop": "3px",
-                                "paddingBottom": "3px",
-                                "width": "110px",
+                                "paddingTop": "4px",
+                                "paddingBottom": "4px",
+                                "width": "115px",
                                 "contents": [
                                     {
                                         "type": "text",
                                         "text": f"{month}.{day} {w_en}",
-                                        "color": "#FFE9A8",
+                                        "color": "#FFE066",
                                         "size": "sm",
                                         "weight": "bold",
                                         "align": "center"
@@ -157,7 +208,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                             {
                                 "type": "image",
                                 "url": get_icon_url(header_icon, repo_name),
-                                "size": "64px",
+                                "size": "68px",
                                 "aspectRatio": "1:1",
                                 "align": "center"
                             }
@@ -173,8 +224,149 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     
     body_contents = []
     
-    # --- [B] 今週の7日間ミニカレンダー（ウィークリービュー） ---
-    # 日曜始まりの今週の7日間を計算
+    # --- [B] 今日のゴミ出し（最上部でドカンと超特大アピール！） ---
+    if today_trash:
+        trash_box = {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#C92A2A",
+            "cornerRadius": "16px",
+            "paddingBottom": "4px",
+            "paddingEnd": "4px",
+            "margin": "md",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "background": {
+                        "type": "linearGradient",
+                        "angle": "135deg",
+                        "startColor": "#FF6B6B",
+                        "endColor": "#FA5252"
+                    },
+                    "cornerRadius": "14px",
+                    "borderWidth": "2px",
+                    "borderColor": "#C92A2A",
+                    "paddingAll": "14px",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "alignItems": "center",
+                            "contents": [
+                                # 丸アイコン
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "backgroundColor": "#FFFFFF",
+                                    "cornerRadius": "25px",
+                                    "width": "50px",
+                                    "height": "50px",
+                                    "justifyContent": "center",
+                                    "alignItems": "center",
+                                    "contents": [
+                                        {
+                                            "type": "image",
+                                            "url": get_icon_url(today_trash.get("icon", "flame"), repo_name),
+                                            "size": "30px",
+                                            "aspectRatio": "1:1"
+                                        }
+                                    ]
+                                },
+                                # 特大文字
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "margin": "lg",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "📢 本日のゴミ収集",
+                                            "size": "xs",
+                                            "weight": "bold",
+                                            "color": "#FFE3E3"
+                                        },
+                                        {
+                                            "type": "text",
+                                            "text": today_trash.get("label", "ゴミの日"),
+                                            "weight": "bold",
+                                            "size": "xxl",
+                                            "color": "#FFFFFF",
+                                            "wrap": True
+                                        },
+                                        {
+                                            "type": "text",
+                                            "text": "※朝8時までに集積所へ出しましょう",
+                                            "size": "xxs",
+                                            "color": "#FFF5F5",
+                                            "margin": "xs"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    else:
+        trash_box = create_3d_box(
+            inner_contents=[
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "alignItems": "center",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "backgroundColor": "#F1F3F5",
+                            "cornerRadius": "20px",
+                            "width": "40px",
+                            "height": "40px",
+                            "justifyContent": "center",
+                            "alignItems": "center",
+                            "contents": [
+                                {
+                                    "type": "image",
+                                    "url": get_icon_url("trash", repo_name),
+                                    "size": "22px",
+                                    "aspectRatio": "1:1"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "margin": "md",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "ゴミ出し情報",
+                                    "size": "xxs",
+                                    "color": "#868E96"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "本日のゴミ出しはありません",
+                                    "weight": "bold",
+                                    "size": "md",
+                                    "color": "#495057"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            border_color="#CED4DA",
+            bg_color="#F8F9FA",
+            shadow_color="#ADB5BD",
+            padding="10px",
+            margin="md"
+        )
+    body_contents.append(trash_box)
+    
+    # --- [C] 今週の7日間スケジュール（ウィークリービュー） ---
     days_since_sunday = (w_idx + 1) % 7
     sunday_date = now_jst.date() - timedelta(days=days_since_sunday)
     event_counts = calendar_data.get("event_counts", {})
@@ -187,32 +379,64 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         t_info = weekly_schedule.get(w_kanji)
         ev_count = event_counts.get(curr_d, 0)
         
-        # 曜日の文字色
+        # 曜日色
         if i == 0:
             day_color = "#E03131"  # 日曜：赤
         elif i == 6:
             day_color = "#1971C2"  # 土曜：青
         else:
-            day_color = "#495057"  # 平日：濃灰
+            day_color = "#343A40"  # 平日：黒
         
-        # マスの背景色・枠線
+        # 今日のマスは特大ハイライト
         if is_today:
-            cell_bg = "#FFE8CC"
-            cell_border = "#F76707"
+            cell_bg = "#FFE066"
+            cell_border = "#F59F00"
             cell_border_w = "2px"
-            date_weight = "bold"
+            today_badge_text = "今日"
+            today_badge_color = "#D9480F"
         else:
             cell_bg = "#FFFFFF"
             cell_border = "#E9ECEF"
             cell_border_w = "1px"
-            date_weight = "regular"
+            today_badge_text = ""
+            today_badge_color = "#00000000"
         
-        # ゴミ短縮テキスト
         t_short = t_info["short"] if t_info else "ー"
-        t_color = "#D9480F" if t_info else "#ADB5BD"
+        t_color = "#C92A2A" if t_info else "#ADB5BD"
         
-        # 予定ドット
-        has_ev = ev_count > 0
+        cell_contents = [
+            {"type": "text", "text": w_kanji, "size": "xs", "weight": "bold", "color": day_color, "align": "center"},
+            {"type": "text", "text": str(curr_d.day), "size": "md", "weight": "bold" if is_today else "regular", "color": "#1A1A1A", "align": "center", "margin": "xs"},
+            {"type": "text", "text": t_short, "size": "xxs", "weight": "bold" if t_info else "regular", "color": t_color, "align": "center", "margin": "xs"}
+        ]
+        
+        if is_today:
+            cell_contents.append({
+                "type": "text",
+                "text": "★今日",
+                "size": "xxs",
+                "weight": "bold",
+                "color": "#D9480F",
+                "align": "center",
+                "margin": "xs"
+            })
+        elif ev_count > 0:
+            cell_contents.append({
+                "type": "text",
+                "text": f"●予定{ev_count}",
+                "size": "xxs",
+                "color": "#1971C2",
+                "align": "center",
+                "margin": "xs"
+            })
+        else:
+            cell_contents.append({
+                "type": "text",
+                "text": " ",
+                "size": "xxs",
+                "align": "center",
+                "margin": "xs"
+            })
         
         week_boxes.append({
             "type": "box",
@@ -227,20 +451,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "paddingEnd": "2px",
             "alignItems": "center",
             "flex": 1,
-            "contents": [
-                {"type": "text", "text": w_kanji, "size": "xxs", "weight": "bold", "color": day_color, "align": "center"},
-                {"type": "text", "text": str(curr_d.day), "size": "xs", "weight": date_weight, "color": "#212529", "align": "center", "margin": "xs"},
-                {"type": "text", "text": t_short, "size": "xxs", "weight": "bold" if t_info else "regular", "color": t_color, "align": "center", "margin": "xs"},
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "width": "6px",
-                    "height": "6px",
-                    "cornerRadius": "3px",
-                    "backgroundColor": "#1971C2" if has_ev else "#00000000",
-                    "margin": "xs"
-                }
-            ]
+            "contents": cell_contents
         })
     
     weekly_card = create_3d_box(
@@ -249,8 +460,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "horizontal",
                 "contents": [
-                    {"type": "image", "url": get_icon_url("calendar", repo_name), "size": "16px", "aspectRatio": "1:1", "flex": 0},
-                    {"type": "text", "text": "今週のスケジュール（ゴミ・予定）", "size": "xs", "weight": "bold", "color": "#495057", "margin": "xs"}
+                    {"type": "image", "url": get_icon_url("calendar", repo_name), "size": "18px", "aspectRatio": "1:1", "flex": 0},
+                    {"type": "text", "text": "今週のスケジュール（日〜土）", "size": "sm", "weight": "bold", "color": "#343A40", "margin": "sm"}
                 ],
                 "alignItems": "center"
             },
@@ -258,140 +469,18 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "horizontal",
                 "spacing": "xs",
-                "margin": "sm",
+                "margin": "md",
                 "contents": week_boxes
             }
         ],
-        border_color="#CED4DA",
-        shadow_color="#ADB5BD",
-        padding="10px",
-        margin="sm"
-    )
-    body_contents.append(weekly_card)
-    
-    # --- [C] 今日のゴミ出し（超特大アピールカード） ---
-    trash_bg_start = "#FFE3CF" if today_trash else "#F8F9FA"
-    trash_bg_end = "#FFC9A8" if today_trash else "#E9ECEF"
-    trash_border = "#8A2E0A" if today_trash else "#ADB5BD"
-    trash_icon = today_trash.get("icon", "trash") if today_trash else "trash"
-    trash_label = today_trash.get("label", "ゴミの日") if today_trash else "今日のゴミ出しはありません"
-    trash_sub = "朝8時までに集積所へ出しましょう" if today_trash else "本日の指定回収はありません"
-    
-    trash_card = create_3d_box(
-        inner_contents=[
-            {
-                "type": "box",
-                "layout": "horizontal",
-                "alignItems": "center",
-                "contents": [
-                    # 左：大きな円形アイコン
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "backgroundColor": "#FFFFFF",
-                        "cornerRadius": "24px",
-                        "width": "48px",
-                        "height": "48px",
-                        "justifyContent": "center",
-                        "alignItems": "center",
-                        "borderWidth": "1px",
-                        "borderColor": trash_border,
-                        "contents": [
-                            {
-                                "type": "image",
-                                "url": get_icon_url(trash_icon, repo_name),
-                                "size": "28px",
-                                "aspectRatio": "1:1"
-                            }
-                        ]
-                    },
-                    # 右：特大文字でゴミの種類
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "margin": "lg",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": "本日のゴミ出し",
-                                "size": "xxs",
-                                "weight": "bold",
-                                "color": "#8A2E0A" if today_trash else "#666666"
-                            },
-                            {
-                                "type": "text",
-                                "text": trash_label,
-                                "weight": "bold",
-                                "size": "xl",
-                                "color": "#3A2A1E",
-                                "wrap": True
-                            },
-                            {
-                                "type": "text",
-                                "text": trash_sub,
-                                "size": "xxs",
-                                "color": "#777777",
-                                "margin": "xs"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ],
-        border_color=trash_border,
-        bg_color=trash_bg_start,
-        shadow_color=trash_border,
+        border_color="#495057",
+        shadow_color="#212529",
         padding="12px",
         margin="md"
     )
-    body_contents.append(trash_card)
+    body_contents.append(weekly_card)
     
     # --- [D] 今日の天気＆お出かけ情報（傘・洗濯を特大強化！） ---
-    max_pop = weather_data.get("max_pop", 0)
-    
-    # 傘カードの判定
-    if max_pop >= 50:
-        umb_card_bg = "#2F54EB"
-        umb_card_title = "傘が必要！"
-        umb_card_sub = f"降水確率 {max_pop}%・雨具を"
-        umb_card_color = "#FFFFFF"
-        umb_icon = "umbrella"
-    elif max_pop >= 30:
-        umb_card_bg = "#E8F1FC"
-        umb_card_title = "折りたたみ傘"
-        umb_card_sub = f"降水確率 {max_pop}%・念のため"
-        umb_card_color = "#185FA5"
-        umb_icon = "umbrella_small"
-    else:
-        umb_card_bg = "#FFF3E0"
-        umb_card_title = "傘はいらない"
-        umb_card_sub = f"降水確率 {max_pop}%・安心"
-        umb_card_color = "#D97706"
-        umb_icon = "umbrella_off"
-    
-    # 洗濯カードの判定
-    laundry_info = weather_data.get("laundry", {})
-    laundry_st = laundry_info.get("status", "一日中OK")
-    if "一日中" in laundry_st:
-        lnd_card_bg = "#E6F6EE"
-        lnd_card_title = "外干しOK！"
-        lnd_card_sub = "一日中よく乾きます"
-        lnd_card_color = "#1E5E3E"
-        lnd_icon = "hanger"
-    elif "6〜18" in laundry_st or "OK" in laundry_st:
-        lnd_card_bg = "#FFF9DB"
-        lnd_card_title = "夕方までOK"
-        lnd_card_sub = "夕方には取り込みを"
-        lnd_card_color = "#A05A00"
-        lnd_icon = "hanger"
-    else:
-        lnd_card_bg = "#F1F3F5"
-        lnd_card_title = "部屋干し推奨"
-        lnd_card_sub = "湿気や雨にご注意を"
-        lnd_card_color = "#495057"
-        lnd_icon = "home"
-    
-    # 6-24時のタイムラインバー色
     def get_period_color(p_type):
         if p_type == "rainy":
             return "#4A90E2"
@@ -415,8 +504,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                         "type": "box",
                         "layout": "horizontal",
                         "contents": [
-                            {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "20px", "aspectRatio": "1:1", "flex": 0},
-                            {"type": "text", "text": f"天気  {config.get('area_name', '横浜')}", "weight": "bold", "size": "md", "color": "#3A2A1E", "margin": "xs"}
+                            {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "22px", "aspectRatio": "1:1", "flex": 0},
+                            {"type": "text", "text": f"天気  {config.get('area_name', '横浜')}", "weight": "bold", "size": "lg", "color": "#1A1A1A", "margin": "xs"}
                         ],
                         "alignItems": "center",
                         "flex": 1
@@ -425,44 +514,52 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                         "type": "box",
                         "layout": "baseline",
                         "contents": [
-                            {"type": "text", "text": f"{weather_data.get('temp_max', '--')}℃", "size": "xxl", "weight": "bold", "color": "#E0561B", "flex": 0},
-                            {"type": "text", "text": " / ", "size": "sm", "color": "#888888", "margin": "xs", "flex": 0},
-                            {"type": "text", "text": f"{weather_data.get('temp_min', '--')}℃", "size": "lg", "weight": "bold", "color": "#2E6FB5", "margin": "xs", "flex": 0}
+                            {"type": "text", "text": f"{weather_data.get('temp_max', '--')}℃", "size": "xxl", "weight": "bold", "color": "#E03131", "flex": 0},
+                            {"type": "text", "text": " / ", "size": "md", "color": "#888888", "margin": "xs", "flex": 0},
+                            {"type": "text", "text": f"{weather_data.get('temp_min', '--')}℃", "size": "xl", "weight": "bold", "color": "#1971C2", "margin": "xs", "flex": 0}
                         ]
                     }
                 ],
                 "alignItems": "center"
             },
-            # 【注目】傘 ＆ 洗濯の特大2列カード
+            # 【特大強化】傘 ＆ 洗濯の2大お出かけカード
             {
                 "type": "box",
                 "layout": "horizontal",
-                "margin": "md",
+                "margin": "lg",
                 "spacing": "md",
                 "contents": [
                     # 傘カード
                     {
                         "type": "box",
                         "layout": "vertical",
-                        "backgroundColor": umb_card_bg,
-                        "cornerRadius": "10px",
-                        "paddingAll": "10px",
+                        "backgroundColor": umb_bg,
+                        "cornerRadius": "12px",
+                        "paddingAll": "12px",
                         "flex": 1,
                         "contents": [
                             {
                                 "type": "box",
                                 "layout": "horizontal",
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url(umb_icon, repo_name), "size": "20px", "aspectRatio": "1:1", "flex": 0},
-                                    {"type": "text", "text": umb_card_title, "size": "sm", "weight": "bold", "color": umb_card_color, "margin": "sm"}
+                                    {"type": "image", "url": get_icon_url(umb_icon, repo_name), "size": "22px", "aspectRatio": "1:1", "flex": 0},
+                                    {"type": "text", "text": "傘の必要性", "size": "xxs", "weight": "bold", "color": umb_color, "margin": "xs"}
                                 ],
                                 "alignItems": "center"
                             },
                             {
                                 "type": "text",
-                                "text": umb_card_sub,
+                                "text": umb_title,
+                                "size": "md",
+                                "weight": "bold",
+                                "color": umb_color,
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": umb_sub,
                                 "size": "xxs",
-                                "color": umb_card_color,
+                                "color": umb_color,
                                 "margin": "xs"
                             }
                         ]
@@ -471,25 +568,33 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     {
                         "type": "box",
                         "layout": "vertical",
-                        "backgroundColor": lnd_card_bg,
-                        "cornerRadius": "10px",
-                        "paddingAll": "10px",
+                        "backgroundColor": lnd_bg,
+                        "cornerRadius": "12px",
+                        "paddingAll": "12px",
                         "flex": 1,
                         "contents": [
                             {
                                 "type": "box",
                                 "layout": "horizontal",
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url(lnd_icon, repo_name), "size": "20px", "aspectRatio": "1:1", "flex": 0},
-                                    {"type": "text", "text": lnd_card_title, "size": "sm", "weight": "bold", "color": lnd_card_color, "margin": "sm"}
+                                    {"type": "image", "url": get_icon_url(lnd_icon, repo_name), "size": "22px", "aspectRatio": "1:1", "flex": 0},
+                                    {"type": "text", "text": "お洗濯指数", "size": "xxs", "weight": "bold", "color": lnd_color, "margin": "xs"}
                                 ],
                                 "alignItems": "center"
                             },
                             {
                                 "type": "text",
-                                "text": lnd_card_sub,
+                                "text": lnd_title,
+                                "size": "md",
+                                "weight": "bold",
+                                "color": lnd_color,
+                                "margin": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": lnd_sub,
                                 "size": "xxs",
-                                "color": lnd_card_color,
+                                "color": lnd_color,
                                 "margin": "xs"
                             }
                         ]
@@ -507,17 +612,17 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                         "type": "box",
                         "layout": "horizontal",
                         "contents": [
-                            {"type": "image", "url": get_icon_url(weather_periods.get("6-12", "sunny"), repo_name), "size": "16px", "aspectRatio": "1:1", "align": "center"},
-                            {"type": "image", "url": get_icon_url(weather_periods.get("12-18", "sunny"), repo_name), "size": "16px", "aspectRatio": "1:1", "align": "center"},
-                            {"type": "image", "url": get_icon_url(weather_periods.get("18-24", "cloudy"), repo_name), "size": "16px", "aspectRatio": "1:1", "align": "center"}
+                            {"type": "image", "url": get_icon_url(weather_periods.get("6-12", "sunny"), repo_name), "size": "18px", "aspectRatio": "1:1", "align": "center"},
+                            {"type": "image", "url": get_icon_url(weather_periods.get("12-18", "sunny"), repo_name), "size": "18px", "aspectRatio": "1:1", "align": "center"},
+                            {"type": "image", "url": get_icon_url(weather_periods.get("18-24", "cloudy"), repo_name), "size": "18px", "aspectRatio": "1:1", "align": "center"}
                         ]
                     },
                     # バー本体
                     {
                         "type": "box",
                         "layout": "horizontal",
-                        "height": "10px",
-                        "cornerRadius": "5px",
+                        "height": "12px",
+                        "cornerRadius": "6px",
                         "margin": "xs",
                         "contents": [
                             {"type": "box", "layout": "vertical", "backgroundColor": get_period_color(weather_periods.get("6-12")), "flex": 1},
@@ -538,8 +643,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "layout": "vertical",
                                 "alignItems": "center",
                                 "contents": [
-                                    {"type": "text", "text": "6-12時", "size": "xxs", "color": "#888888"},
-                                    {"type": "text", "text": pops.get("6-12", "-"), "size": "xs", "weight": "bold", "color": "#2E6FB5" if "50" in pops.get("6-12", "") else "#495057"}
+                                    {"type": "text", "text": "6-12時", "size": "xxs", "color": "#868E96"},
+                                    {"type": "text", "text": pops.get("6-12", "-"), "size": "sm", "weight": "bold", "color": "#1971C2" if "50" in pops.get("6-12", "") else "#343A40"}
                                 ],
                                 "flex": 1
                             },
@@ -548,8 +653,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "layout": "vertical",
                                 "alignItems": "center",
                                 "contents": [
-                                    {"type": "text", "text": "12-18時", "size": "xxs", "color": "#888888"},
-                                    {"type": "text", "text": pops.get("12-18", "-"), "size": "xs", "weight": "bold", "color": "#2E6FB5" if "50" in pops.get("12-18", "") else "#495057"}
+                                    {"type": "text", "text": "12-18時", "size": "xxs", "color": "#868E96"},
+                                    {"type": "text", "text": pops.get("12-18", "-"), "size": "sm", "weight": "bold", "color": "#1971C2" if "50" in pops.get("12-18", "") else "#343A40"}
                                 ],
                                 "flex": 1
                             },
@@ -558,8 +663,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "layout": "vertical",
                                 "alignItems": "center",
                                 "contents": [
-                                    {"type": "text", "text": "18-24時", "size": "xxs", "color": "#888888"},
-                                    {"type": "text", "text": pops.get("18-24", "-"), "size": "xs", "weight": "bold", "color": "#2E6FB5" if "50" in pops.get("18-24", "") else "#495057"}
+                                    {"type": "text", "text": "18-24時", "size": "xxs", "color": "#868E96"},
+                                    {"type": "text", "text": pops.get("18-24", "-"), "size": "sm", "weight": "bold", "color": "#1971C2" if "50" in pops.get("18-24", "") else "#343A40"}
                                 ],
                                 "flex": 1
                             }
@@ -574,13 +679,13 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "margin": "md",
                 "backgroundColor": "#F3ECFC",
                 "cornerRadius": "8px",
-                "paddingAll": "8px",
+                "paddingAll": "10px",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": "👔", "size": "sm", "flex": 0},
+                    {"type": "text", "text": "👔", "size": "md", "flex": 0},
                     {
                         "type": "text",
-                        "text": f"服装: {ai_summary.get('clothing_comment', '気温に合わせた服装でお出かけください')}",
+                        "text": f"服装目安: {ai_summary.get('clothing_comment', '気温に合わせた服装でお出かけください')}",
                         "size": "xs",
                         "color": "#4B3A66",
                         "weight": "bold",
@@ -590,8 +695,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 ]
             }
         ],
-        border_color="#B85A0E",
-        shadow_color="#8A2E0A",
+        border_color="#F08A24",
+        shadow_color="#B85A0E",
         padding="14px",
         margin="md"
     )
@@ -608,8 +713,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "horizontal",
             "contents": [
-                {"type": "image", "url": get_icon_url("calendar", repo_name), "size": "20px", "aspectRatio": "1:1", "flex": 0},
-                {"type": "text", "text": "予定（Googleカレンダー）", "weight": "bold", "size": "md", "color": "#123F73", "margin": "xs"}
+                {"type": "image", "url": get_icon_url("calendar", repo_name), "size": "22px", "aspectRatio": "1:1", "flex": 0},
+                {"type": "text", "text": "今日の予定（カレンダー）", "weight": "bold", "size": "lg", "color": "#1864AB", "margin": "xs"}
             ],
             "alignItems": "center"
         }
@@ -631,7 +736,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "paddingEnd": "8px",
                 "paddingTop": "2px",
                 "paddingBottom": "2px",
-                "width": "44px"
+                "width": "46px"
             })
             for ev in cal_today:
                 cal_sub_contents.append({
@@ -639,7 +744,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "layout": "horizontal",
                     "margin": "sm",
                     "contents": [
-                        {"type": "text", "text": "•", "size": "md", "color": "#1971C2", "flex": 0},
+                        {"type": "text", "text": "▶", "size": "sm", "color": "#1971C2", "flex": 0},
                         {"type": "text", "text": ev, "size": "md", "weight": "bold", "color": "#1A1A1A", "margin": "sm", "wrap": True}
                     ]
                 })
@@ -649,7 +754,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "margin": "md",
                 "contents": [
-                    {"type": "text", "text": "今日の予定はありません（良い一日を！）", "size": "xs", "color": "#777777"}
+                    {"type": "text", "text": "今日の予定はありません（良い一日を！）", "size": "sm", "color": "#868E96"}
                 ]
             })
         
@@ -658,9 +763,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             cal_sub_contents.append({
                 "type": "box",
                 "layout": "baseline",
-                "margin": "md",
+                "margin": "lg",
                 "contents": [
-                    {"type": "text", "text": "明日", "color": "#123F73", "size": "xxs", "weight": "bold", "flex": 0}
+                    {"type": "text", "text": "明日", "color": "#1864AB", "size": "xxs", "weight": "bold", "flex": 0}
                 ],
                 "backgroundColor": "#D0EBFF",
                 "cornerRadius": "4px",
@@ -705,7 +810,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "margin": "xs",
                     "contents": [
                         {"type": "text", "text": "•", "size": "xs", "color": "#ADB5BD", "flex": 0},
-                        {"type": "text", "text": ev, "size": "xs", "color": "#666666", "margin": "xs", "wrap": True}
+                        {"type": "text", "text": ev, "size": "xs", "color": "#495057", "margin": "xs", "wrap": True}
                     ]
                 })
     else:
@@ -714,13 +819,13 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "horizontal",
             "margin": "md",
             "contents": [
-                {"type": "text", "text": "予定はありません。今日も充実した一日を！", "size": "xs", "color": "#777777"}
+                {"type": "text", "text": "予定はありません。今日も充実した一日を！", "size": "sm", "color": "#868E96"}
             ]
         })
     
     calendar_card = create_3d_box(
         inner_contents=cal_sub_contents,
-        border_color="#185FA5",
+        border_color="#1864AB",
         shadow_color="#0C3E6D",
         padding="14px",
         margin="md"
@@ -735,8 +840,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "horizontal",
                 "contents": [
-                    {"type": "image", "url": get_icon_url("fish_on", repo_name), "size": "22px", "aspectRatio": "1:1", "flex": 0},
-                    {"type": "text", "text": "釣り予報", "weight": "bold", "size": "md", "color": "#0C5A75", "margin": "xs"}
+                    {"type": "image", "url": get_icon_url("fish_on", repo_name), "size": "24px", "aspectRatio": "1:1", "flex": 0},
+                    {"type": "text", "text": "釣り予報", "weight": "bold", "size": "lg", "color": "#0C5A75", "margin": "xs"}
                 ],
                 "alignItems": "center"
             }
@@ -765,7 +870,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 fish_icons.append({
                     "type": "image",
                     "url": get_icon_url(icon_file, repo_name),
-                    "size": "16px",
+                    "size": "18px",
                     "aspectRatio": "1:1"
                 })
             
@@ -777,7 +882,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "vertical",
                 "backgroundColor": spot_bg,
-                "cornerRadius": "10px",
+                "cornerRadius": "12px",
                 "borderWidth": "1px",
                 "borderColor": spot_border,
                 "paddingAll": "12px",
@@ -815,11 +920,11 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "borderColor": "#CED4DA",
                                 "paddingStart": "8px",
                                 "paddingEnd": "8px",
-                                "paddingTop": "3px",
-                                "paddingBottom": "3px",
+                                "paddingTop": "4px",
+                                "paddingBottom": "4px",
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "12px", "aspectRatio": "1:1", "flex": 0},
-                                    {"type": "text", "text": spot.get("wind_label", "-"), "size": "xxs", "color": "#495057", "margin": "xs"}
+                                    {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "14px", "aspectRatio": "1:1", "flex": 0},
+                                    {"type": "text", "text": spot.get("wind_label", "-"), "size": "xs", "color": "#495057", "margin": "xs"}
                                 ],
                                 "alignItems": "center"
                             },
@@ -831,11 +936,11 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "cornerRadius": "12px",
                                 "paddingStart": "8px",
                                 "paddingEnd": "8px",
-                                "paddingTop": "3px",
-                                "paddingBottom": "3px",
+                                "paddingTop": "4px",
+                                "paddingBottom": "4px",
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url("wave", repo_name), "size": "12px", "aspectRatio": "1:1", "flex": 0},
-                                    {"type": "text", "text": f"波 {spot.get('wave_label', '-')}", "size": "xxs", "weight": "bold", "color": wave_color, "margin": "xs"}
+                                    {"type": "image", "url": get_icon_url("wave", repo_name), "size": "14px", "aspectRatio": "1:1", "flex": 0},
+                                    {"type": "text", "text": f"波 {spot.get('wave_label', '-')}", "size": "xs", "weight": "bold", "color": wave_color, "margin": "xs"}
                                 ],
                                 "alignItems": "center"
                             }

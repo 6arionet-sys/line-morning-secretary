@@ -183,14 +183,17 @@ def main():
     
     # 5. LINE送信
     all_success = True
+    send_results = []
     for uid in user_ids:
         try:
             print(f"Sending Flex Message to {uid[:6]}...{uid[-4:] if len(uid) > 10 else ''}")
             code, resp_text = send_line_message(line_token, uid, flex_msg)
             print(f"Success! Status: {code}")
+            send_results.append(f"Flex message sent to {uid[:6]}: Status {code}")
         except urllib.error.HTTPError as http_err:
             error_resp = http_err.read().decode('utf-8', errors='ignore')
             print(f"Error sending Flex Message ({http_err.code}): {error_resp}")
+            send_results.append(f"Flex FAILED ({http_err.code}): {error_resp}")
             print("Attempting fallback to plain text message...")
             
             try:
@@ -198,18 +201,29 @@ def main():
                 txt_msg = {"type": "text", "text": fallback_txt}
                 code, resp_text = send_line_message(line_token, uid, txt_msg)
                 print(f"Fallback text message sent successfully! Status: {code}")
+                send_results.append(f"Fallback text sent to {uid[:6]}: Status {code}")
             except Exception as fb_err:
                 print(f"Fatal: Fallback text message also failed: {fb_err}")
+                send_results.append(f"Fallback text FAILED: {fb_err}")
                 all_success = False
         except Exception as err:
             print(f"Unexpected error sending to {uid}: {err}")
+            send_results.append(f"Unexpected error: {err}")
             all_success = False
     
     # 6. last_run.txt の記録
     last_run_path = os.path.join(base_dir, "last_run.txt")
+    log_info = {
+        "timestamp": datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S JST"),
+        "all_success": all_success,
+        "results": send_results if 'send_results' in locals() else []
+    }
     try:
         with open(last_run_path, "w", encoding="utf-8") as f:
-            f.write(datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S JST\n"))
+            f.write(f"Timestamp: {log_info['timestamp']}\n")
+            f.write(f"Success: {log_info['all_success']}\n")
+            for res in log_info['results']:
+                f.write(f"Result: {res}\n")
     except Exception as e:
         print(f"Warning: Could not write last_run.txt: {e}")
     
