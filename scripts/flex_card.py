@@ -108,14 +108,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     
     today_date = now.date()
     is_today_hol, today_hol_name, _ = get_holiday_info(today_date)
-    if is_today_hol:
-        today_type_desc = f"祝 {today_hol_name}"
-    elif w_idx == 6:
-        today_type_desc = "日曜日"
-    elif w_idx == 5:
-        today_type_desc = "土曜日"
-    else:
-        today_type_desc = "平日"
+    today_hol_tag = f"  祝 {today_hol_name}" if is_today_hol else ""
 
     if isinstance(ai_summary, dict):
         clothing_text = (ai_summary.get("clothing_comment", "") or "").strip() or "日中は快適。朝晩は薄手の上着を"
@@ -125,7 +118,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         clothing_text = "日中は快適。朝晩は薄手の上着を"
     
     trash_str = today_trash['label'] if today_trash else "ゴミ出しなし"
-    hol_suffix = f"・{today_type_desc}" if (is_today_hol or w_idx in (5, 6)) else "・平日"
+    hol_suffix = f"・祝 {today_hol_name}" if is_today_hol else ""
     alt_text = f"【朝の秘書】{month}/{day}({w_ja}{hol_suffix}) {config.get('area_name', '横浜')} {weather_data.get('temp_max', '--')}℃ / {trash_str}"
     
     # --- [1] ヘッダー ---
@@ -161,7 +154,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             {"type": "text", "text": str(curr_d.day), "size": "xs", "weight": "bold", "color": c, "align": "center", "margin": "xs"}
         ]
         
-        # 3行目: 祝日名または日種別の表示（謎の点々を廃止し、何の日かを明記）
+        # 3行目: 祝日の場合のみ祝日名を表示（平日は余白プレースホルダーで統一）
         if is_hol:
             sub_c = "#E03131" if is_today else "#FFE3E3"
             cell_contents.append({
@@ -170,17 +163,6 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "size": "xxs",
                 "weight": "bold",
                 "color": sub_c,
-                "align": "center",
-                "margin": "xs"
-            })
-        elif is_today:
-            today_sub = "日曜" if i == 0 else ("土曜" if i == 6 else "平日")
-            cell_contents.append({
-                "type": "text",
-                "text": today_sub,
-                "size": "xxs",
-                "weight": "bold",
-                "color": c,
                 "align": "center",
                 "margin": "xs"
             })
@@ -223,7 +205,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{month}.{day} {w_en}  {today_type_desc}", "size": "sm", "weight": "bold", "color": "#FFFFFF"},
+                    {"type": "text", "text": f"{month}.{day} {w_en}{today_hol_tag}", "size": "sm", "weight": "bold", "color": "#FFFFFF"},
                     {"type": "image", "url": get_icon_url("sun_white", repo_name), "size": "26px", "align": "end"}
                 ]
             },
