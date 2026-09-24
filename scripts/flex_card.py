@@ -12,7 +12,7 @@ def get_icon_url(icon_name, repo_name=None):
         repo_name = os.environ.get("GITHUB_REPOSITORY", "").strip() or "6arionet-sys/line-morning-secretary"
     if not icon_name.endswith(".png"):
         icon_name = f"{icon_name}.png"
-    return f"https://raw.githubusercontent.com/{repo_name}/main/icons/{icon_name}"
+    return f"https://raw.githubusercontent.com/{repo_name}/main/icons/v2/{icon_name}"
 
 def card_box(contents, border="#B85A0E", bg="#FFFFFF", bg_gradient=None, shadow="#3A2A1E", pad="12px", margin="lg"):
     inner_box = {
@@ -149,26 +149,48 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         rain_notice = "夜から雨が降りそう" if max_pop >= 40 else "傘なしでお出かけOK"
     short_w = (weather_data.get("short_weather", "") or "").strip() or "晴れ"
     
+    # 天気グラデーション判定
+    # 晴れのち曇り -> 左オレンジフェードで→右灰色
+    if ("晴" in short_w) and ("くもり" in short_w or "曇" in short_w):
+        wbox_start, wbox_end, wbox_border = "#FFF3E0", "#E9ECEF", "#CED4DA"
+        second_w_icon = "cloudy"
+    elif ("晴" in short_w) and ("雨" in short_w or max_pop >= 40):
+        wbox_start, wbox_end, wbox_border = "#FFF3E0", "#D9EEFC", "#BCE0F8"
+        second_w_icon = "rainy"
+    elif ("くもり" in short_w or "曇" in short_w) and ("晴" in short_w):
+        wbox_start, wbox_end, wbox_border = "#E9ECEF", "#FFF3E0", "#FFD8A8"
+        second_w_icon = "sunny"
+    elif "雨" in short_w or max_pop >= 40:
+        wbox_start, wbox_end, wbox_border = "#EBF5FF", "#D9EEFC", "#BCE0F8"
+        second_w_icon = "rainy"
+    elif "くもり" in short_w or "曇" in short_w:
+        wbox_start, wbox_end, wbox_border = "#FFFFFF", "#E9ECEF", "#CED4DA"
+        second_w_icon = "cloudy"
+    else:
+        wbox_start, wbox_end, wbox_border = "#FFFFFF", "#FFE8D6", "#FFD8A8"
+        second_w_icon = "sunny"
+    
     weather_contents = [
         {
             "type": "box",
             "layout": "horizontal",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url("badge_weather", repo_name), "size": "26px"},
-                {"type": "text", "text": " 天気", "weight": "bold", "size": "md", "color": "#8A4B1A", "margin": "xs"},
-                {"type": "text", "text": config.get("area_name", "横浜") or "横浜", "size": "xs", "color": "#888888", "align": "end"}
+                {"type": "image", "url": get_icon_url("badge_weather", repo_name), "size": "26px", "flex": 0},
+                {"type": "text", "text": " 天気", "weight": "bold", "size": "md", "color": "#8A4B1A", "margin": "xs", "flex": 0},
+                {"type": "text", "text": config.get("area_name", "横浜") or "横浜", "size": "xs", "color": "#888888", "align": "end", "flex": 1}
             ]
         },
+
         # 天気メイン枠
         {
             "type": "box",
             "layout": "horizontal",
             "margin": "sm",
-            "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FFFFFF", "endColor": "#D9EEFC"},
+            "background": {"type": "linearGradient", "angle": "90deg", "startColor": wbox_start, "endColor": wbox_end},
             "cornerRadius": "12px",
             "borderWidth": "1px",
-            "borderColor": "#BCE0F8",
+            "borderColor": wbox_border,
             "paddingAll": "10px",
             "alignItems": "center",
             "contents": [
@@ -176,17 +198,18 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "type": "box",
                     "layout": "horizontal",
                     "alignItems": "center",
-                    "flex": 4,
+                    "flex": 0,
                     "contents": [
-                        {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "32px"},
-                        {"type": "image", "url": get_icon_url("arrow_right", repo_name), "size": "12px", "margin": "xs"},
-                        {"type": "image", "url": get_icon_url("rainy" if max_pop >= 40 else "cloudy", repo_name), "size": "32px", "margin": "xs"}
+                        {"type": "image", "url": get_icon_url("sunny" if "晴" in short_w else "cloudy", repo_name), "size": "32px", "flex": 0},
+                        {"type": "image", "url": get_icon_url("arrow_right", repo_name), "size": "12px", "margin": "xs", "flex": 0},
+                        {"type": "image", "url": get_icon_url(second_w_icon, repo_name), "size": "32px", "margin": "xs", "flex": 0}
                     ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
-                    "flex": 5,
+                    "flex": 1,
+                    "margin": "md",
                     "contents": [
                         {"type": "text", "text": "今日の天気", "size": "xxs", "color": "#6E8B9E"},
                         {"type": "text", "text": short_w, "size": "md", "weight": "bold", "color": "#2A6496"},
@@ -252,7 +275,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 }
             ]
         },
-        # 3ピル (傘・洗濯・服) - 立体ボタンアイコン
+        # 3ピル (傘・洗濯・服) - 立体ボタンアイコン（左寄せ）
         {
             "type": "box",
             "layout": "horizontal",
@@ -262,8 +285,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "paddingAll": "6px",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url(umb_icon, repo_name), "size": "24px"},
-                {"type": "text", "text": umb_t, "size": "xs", "weight": "bold", "color": umb_c, "margin": "sm"}
+                {"type": "image", "url": get_icon_url(umb_icon, repo_name), "size": "24px", "flex": 0},
+                {"type": "text", "text": umb_t, "size": "xs", "weight": "bold", "color": umb_c, "margin": "sm", "flex": 1}
             ]
         },
         {
@@ -275,8 +298,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "paddingAll": "6px",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url(lnd_icon, repo_name), "size": "24px"},
-                {"type": "text", "text": lnd_t, "size": "xs", "weight": "bold", "color": lnd_c, "margin": "sm"}
+                {"type": "image", "url": get_icon_url(lnd_icon, repo_name), "size": "24px", "flex": 0},
+                {"type": "text", "text": lnd_t, "size": "xs", "weight": "bold", "color": lnd_c, "margin": "sm", "flex": 1}
             ]
         },
         {
@@ -288,8 +311,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "paddingAll": "6px",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url("pill_clothing", repo_name), "size": "24px"},
-                {"type": "text", "text": clothing_text, "size": "xs", "weight": "bold", "color": "#5B21B6", "margin": "sm", "wrap": True}
+                {"type": "image", "url": get_icon_url("pill_clothing", repo_name), "size": "24px", "flex": 0},
+                {"type": "text", "text": clothing_text, "size": "xs", "weight": "bold", "color": "#5B21B6", "margin": "sm", "wrap": True, "flex": 1}
             ]
         },
         # 気象庁ボタン
@@ -369,8 +392,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "horizontal",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url("badge_trash", repo_name), "size": "26px"},
-                {"type": "text", "text": " ゴミ", "weight": "bold", "size": "md", "color": "#5C2607", "margin": "xs"}
+                {"type": "image", "url": get_icon_url("badge_trash", repo_name), "size": "26px", "flex": 0},
+                {"type": "text", "text": " ゴミ", "weight": "bold", "size": "md", "color": "#5C2607", "margin": "xs", "flex": 0}
             ]
         },
         {
@@ -399,8 +422,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "horizontal",
             "alignItems": "center",
             "contents": [
-                {"type": "image", "url": get_icon_url("badge_calendar", repo_name), "size": "26px"},
-                {"type": "text", "text": " 予定", "weight": "bold", "size": "md", "color": "#1A4B7D", "margin": "xs"}
+                {"type": "image", "url": get_icon_url("badge_calendar", repo_name), "size": "26px", "flex": 0},
+                {"type": "text", "text": " 予定", "weight": "bold", "size": "md", "color": "#1A4B7D", "margin": "xs", "flex": 0}
             ]
         },
         {
@@ -555,8 +578,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "image", "url": get_icon_url("badge_fishing", repo_name), "size": "26px"},
-                    {"type": "text", "text": " 釣り", "weight": "bold", "size": "md", "color": "#0C5A75", "margin": "xs"}
+                    {"type": "image", "url": get_icon_url("badge_fishing", repo_name), "size": "26px", "flex": 0},
+                    {"type": "text", "text": " 釣り", "weight": "bold", "size": "md", "color": "#0C5A75", "margin": "xs", "flex": 0}
                 ]
             }
         ]
@@ -615,9 +638,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "borderColor": "#CED4DA",
                                 "paddingStart": "6px", "paddingEnd": "6px", "paddingTop": "2px", "paddingBottom": "2px",
                                 "alignItems": "center",
+                                "flex": 0,
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "12px"},
-                                    {"type": "text", "text": f" {w_lbl}", "size": "xxs", "color": "#495057", "margin": "xs"}
+                                    {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "12px", "flex": 0},
+                                    {"type": "text", "text": f" {w_lbl}", "size": "xxs", "color": "#495057", "margin": "xs", "flex": 0}
                                 ]
                             },
                             {
@@ -627,9 +651,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "cornerRadius": "10px",
                                 "paddingStart": "6px", "paddingEnd": "6px", "paddingTop": "2px", "paddingBottom": "2px",
                                 "alignItems": "center",
+                                "flex": 0,
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url("wave", repo_name), "size": "12px"},
-                                    {"type": "text", "text": f" {wv_lbl}", "size": "xxs", "weight": "bold" if is_high else "regular", "color": w_c, "margin": "xs"}
+                                    {"type": "image", "url": get_icon_url("wave", repo_name), "size": "12px", "flex": 0},
+                                    {"type": "text", "text": f" {wv_lbl}", "size": "xxs", "weight": "bold" if is_high else "regular", "color": w_c, "margin": "xs", "flex": 0}
                                 ]
                             }
                         ]
