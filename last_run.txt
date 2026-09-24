@@ -1,4 +1,4 @@
-Timestamp: 2026-09-24 21:53:44 JST
+Timestamp: 2026-09-24 21:58:02 JST
 Success: True
-Result: Flex FAILED (400): {"message":"A message (messages[0]) in the request body is invalid","details":[{"message":"must be specified","property":"/body/contents/2/contents/0/contents/2/contents/1/contents/0/contents"},{"message":"must be specified","property":"/body/contents/2/contents/0/contents/2/contents/1/contents/1/contents"},{"message":"must be specified","property":"/body/contents/2/contents/0/contents/2/contents/1/contents/2/contents"},{"message":"must be specified","property":"/body/contents/2/contents/0/contents/2/contents/1/contents/3/contents"},{"message":"must be specified","property":"/body/contents/2/contents/0/contents/2/contents/1/contents/4/contents"}]}
+Result: Flex FAILED (400): {"message":"A message (messages[0]) in the request body is invalid","details":[{"message":"invalid property","property":"/header/contents/0/contents/0/color"}]}
 Result: Fallback text sent to U69254: Status 200
