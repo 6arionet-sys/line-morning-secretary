@@ -7,6 +7,45 @@ JST = timezone(timedelta(hours=9))
 WEEKDAY_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 WEEKDAY_SUNDAY_FIRST_JA = ["日", "月", "火", "水", "木", "金", "土"]
 
+try:
+    import jpholiday
+    HAS_JPHOLIDAY = True
+except ImportError:
+    HAS_JPHOLIDAY = False
+
+HOLIDAY_SHORT_NAMES = {
+    "元日": "元日",
+    "成人の日": "成人",
+    "建国記念の日": "建国",
+    "天皇誕生日": "天皇",
+    "春分の日": "春分",
+    "昭和の日": "昭和",
+    "憲法記念日": "憲法",
+    "みどりの日": "みどり",
+    "こどもの日": "こども",
+    "海の日": "海の日",
+    "山の日": "山の日",
+    "敬老の日": "敬老",
+    "秋分の日": "秋分",
+    "スポーツの日": "スポ",
+    "文化の日": "文化",
+    "勤労感謝の日": "勤労",
+    "振替休日": "振替",
+    "国民の休日": "休日",
+}
+
+def get_holiday_info(date_obj):
+    if not HAS_JPHOLIDAY:
+        return False, "", ""
+    try:
+        if jpholiday.is_holiday(date_obj):
+            full_name = jpholiday.is_holiday_name(date_obj) or "祝日"
+            short_name = HOLIDAY_SHORT_NAMES.get(full_name, full_name[:2])
+            return True, full_name, short_name
+    except Exception:
+        pass
+    return False, "", ""
+
 def get_icon_url(icon_name, repo_name=None):
     if not repo_name:
         repo_name = os.environ.get("GITHUB_REPOSITORY", "").strip() or "6arionet-sys/line-morning-secretary"
@@ -67,32 +106,84 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     else:
         lnd_t, lnd_bg, lnd_c, lnd_icon = "洗濯 部屋干し推奨　雨や高湿度に注意", "#F8FAFC", "#475569", "pill_home"
     
-    clothing_text = (ai_summary.get("clothing_comment", "") or "").strip() or "日中は快適。朝晩は薄手の上着を"
+    today_date = now.date()
+    is_today_hol, today_hol_name, _ = get_holiday_info(today_date)
+    if is_today_hol:
+        today_type_desc = f"祝 {today_hol_name}"
+    elif w_idx == 6:
+        today_type_desc = "日曜日"
+    elif w_idx == 5:
+        today_type_desc = "土曜日"
+    else:
+        today_type_desc = "平日"
+
+    if isinstance(ai_summary, dict):
+        clothing_text = (ai_summary.get("clothing_comment", "") or "").strip() or "日中は快適。朝晩は薄手の上着を"
+    elif isinstance(ai_summary, str):
+        clothing_text = ai_summary.strip() or "日中は快適。朝晩は薄手の上着を"
+    else:
+        clothing_text = "日中は快適。朝晩は薄手の上着を"
     
     trash_str = today_trash['label'] if today_trash else "ゴミ出しなし"
-    alt_text = f"【朝の秘書】{month}/{day}({w_ja}) {config.get('area_name', '横浜')} {weather_data.get('temp_max', '--')}℃ / {trash_str}"
+    hol_suffix = f"・{today_type_desc}" if (is_today_hol or w_idx in (5, 6)) else "・平日"
+    alt_text = f"【朝の秘書】{month}/{day}({w_ja}{hol_suffix}) {config.get('area_name', '横浜')} {weather_data.get('temp_max', '--')}℃ / {trash_str}"
     
     # --- [1] ヘッダー ---
     days_since_sunday = (w_idx + 1) % 7
-    sunday = now.date() - timedelta(days=days_since_sunday)
-    event_counts = calendar_data.get("event_counts", {})
+    sunday = today_date - timedelta(days=days_since_sunday)
     
     week_cells = []
     for i in range(7):
         curr_d = sunday + timedelta(days=i)
-        is_today = (curr_d == now.date())
-        ev_cnt = event_counts.get(curr_d, 0)
+        is_today = (curr_d == today_date)
+        is_hol, hol_name, short_name = get_holiday_info(curr_d)
         
+        # 配色ルール:
+        # 今日の枠: 白背景、赤枠線
+        # その他: 半透明白背景 (#FFFFFF33)
+        # テキスト色:
+        # - 日曜(i=0) または 祝日: 今日なら赤(#E03131)、他なら薄赤(#FFE3E3)
+        # - 土曜(i=6): 今日なら青(#1971C2)、他なら薄青(#D0EBFF)
+        # - 平日: 今日なら赤(#E03131)、他なら白(#FFFFFF)
         bg = "#FFFFFF" if is_today else "#FFFFFF33"
-        c = "#E03131" if is_today else "#FFFFFF"
+        if is_today:
+            c = "#1971C2" if (i == 6 and not is_hol) else "#E03131"
+        else:
+            if i == 0 or is_hol:
+                c = "#FFE3E3"
+            elif i == 6:
+                c = "#D0EBFF"
+            else:
+                c = "#FFFFFF"
         
         cell_contents = [
             {"type": "text", "text": WEEKDAY_SUNDAY_FIRST_JA[i], "size": "xxs", "weight": "bold", "color": c, "align": "center"},
             {"type": "text", "text": str(curr_d.day), "size": "xs", "weight": "bold", "color": c, "align": "center", "margin": "xs"}
         ]
-        if ev_cnt > 0:
-            dots_str = "●●" if ev_cnt >= 2 else "●"
-            cell_contents.append({"type": "text", "text": dots_str, "size": "xxs", "color": c, "align": "center"})
+        
+        # 3行目: 祝日名または日種別の表示（謎の点々を廃止し、何の日かを明記）
+        if is_hol:
+            sub_c = "#E03131" if is_today else "#FFE3E3"
+            cell_contents.append({
+                "type": "text",
+                "text": short_name,
+                "size": "xxs",
+                "weight": "bold",
+                "color": sub_c,
+                "align": "center",
+                "margin": "xs"
+            })
+        elif is_today:
+            today_sub = "日曜" if i == 0 else ("土曜" if i == 6 else "平日")
+            cell_contents.append({
+                "type": "text",
+                "text": today_sub,
+                "size": "xxs",
+                "weight": "bold",
+                "color": c,
+                "align": "center",
+                "margin": "xs"
+            })
         else:
             # プレースホルダーで高さを揃える
             cell_contents.append({"type": "box", "layout": "vertical", "height": "14px", "contents": []})
@@ -104,6 +195,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "cornerRadius": "6px",
             "paddingTop": "4px",
             "paddingBottom": "4px",
+            "paddingStart": "1px",
+            "paddingEnd": "1px",
             "alignItems": "center",
             "flex": 1,
             "contents": cell_contents
@@ -130,7 +223,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{month}.{day} {w_en}", "size": "sm", "weight": "bold", "color": "#FFFFFF"},
+                    {"type": "text", "text": f"{month}.{day} {w_en}  {today_type_desc}", "size": "sm", "weight": "bold", "color": "#FFFFFF"},
                     {"type": "image", "url": get_icon_url("sun_white", repo_name), "size": "26px", "align": "end"}
                 ]
             },
@@ -149,27 +242,40 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         rain_notice = "夜から雨が降りそう" if max_pop >= 40 else "傘なしでお出かけOK"
     short_w = (weather_data.get("short_weather", "") or "").strip() or "晴れ"
     
-    # 天気グラデーション判定
-    # 晴れのち曇り -> 左オレンジフェードで→右灰色
+    # 天気グラデーション判定（しっかり伝わる濃いめのトーン）
     if ("晴" in short_w) and ("くもり" in short_w or "曇" in short_w):
-        wbox_start, wbox_end, wbox_border = "#FFF3E0", "#E9ECEF", "#CED4DA"
+        wbox_start, wbox_end, wbox_border = "#FFD8A8", "#CED4DA", "#ADB5BD"
         second_w_icon = "cloudy"
     elif ("晴" in short_w) and ("雨" in short_w or max_pop >= 40):
-        wbox_start, wbox_end, wbox_border = "#FFF3E0", "#D9EEFC", "#BCE0F8"
+        wbox_start, wbox_end, wbox_border = "#FFD8A8", "#A5D8FF", "#74C0FC"
         second_w_icon = "rainy"
     elif ("くもり" in short_w or "曇" in short_w) and ("晴" in short_w):
-        wbox_start, wbox_end, wbox_border = "#E9ECEF", "#FFF3E0", "#FFD8A8"
+        wbox_start, wbox_end, wbox_border = "#CED4DA", "#FFD8A8", "#FFA94D"
         second_w_icon = "sunny"
     elif "雨" in short_w or max_pop >= 40:
-        wbox_start, wbox_end, wbox_border = "#EBF5FF", "#D9EEFC", "#BCE0F8"
+        wbox_start, wbox_end, wbox_border = "#D0EBFF", "#74C0FC", "#4DABF7"
         second_w_icon = "rainy"
     elif "くもり" in short_w or "曇" in short_w:
-        wbox_start, wbox_end, wbox_border = "#FFFFFF", "#E9ECEF", "#CED4DA"
+        wbox_start, wbox_end, wbox_border = "#E9ECEF", "#CED4DA", "#ADB5BD"
         second_w_icon = "cloudy"
     else:
-        wbox_start, wbox_end, wbox_border = "#FFFFFF", "#FFE8D6", "#FFD8A8"
+        wbox_start, wbox_end, wbox_border = "#FFE8CC", "#FFA94D", "#FF922B"
         second_w_icon = "sunny"
     
+    def get_seg_colors(w_type):
+        if w_type == "sunny":
+            return "#FFA94D", "#E8590C"
+        elif w_type == "rainy":
+            return "#74C0FC", "#1971C2"
+        elif w_type == "snowy":
+            return "#E0F2FE", "#74C0FC"
+        else: # cloudy
+            return "#DEE2E6", "#ADB5BD"
+            
+    c1_s, c1_e = get_seg_colors(weather_periods.get("6-12", "sunny"))
+    c2_s, c2_e = get_seg_colors(weather_periods.get("12-18", "cloudy"))
+    c3_s, c3_e = get_seg_colors(weather_periods.get("18-24", "rainy"))
+
     weather_contents = [
         {
             "type": "box",
@@ -246,12 +352,37 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     ]
                 },
                 {
-                    "type": "image",
-                    "url": get_icon_url("timeline_bar_3d", repo_name),
-                    "size": "full",
-                    "aspectRatio": "24:1",
-                    "aspectMode": "cover",
-                    "margin": "xs"
+                    "type": "box",
+                    "layout": "horizontal",
+                    "height": "8px",
+                    "cornerRadius": "4px",
+                    "backgroundColor": "#ADB5BD",
+                    "margin": "xs",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "background": {"type": "linearGradient", "angle": "180deg", "startColor": c1_s, "endColor": c1_e},
+                            "cornerRadius": "4px",
+                            "flex": 1,
+                            "contents": []
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "background": {"type": "linearGradient", "angle": "180deg", "startColor": c2_s, "endColor": c2_e},
+                            "flex": 1,
+                            "contents": []
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "background": {"type": "linearGradient", "angle": "180deg", "startColor": c3_s, "endColor": c3_e},
+                            "cornerRadius": "4px",
+                            "flex": 1,
+                            "contents": []
+                        }
+                    ]
                 },
                 {
                     "type": "box",
@@ -595,7 +726,13 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             
             f_icons = []
             for j in range(1, 6):
-                f_icons.append({"type": "image", "url": get_icon_url("fish_on" if j <= sc else "fish_off", repo_name), "size": "16px"})
+                f_icons.append({
+                    "type": "image",
+                    "url": get_icon_url("fish_on" if j <= sc else "fish_off", repo_name),
+                    "size": "16px",
+                    "aspectRatio": "1:1",
+                    "flex": 0
+                })
             
             is_high = spot.get("is_high_wave", False)
             w_bg = "#FEE2E2" if is_high else "#E0F2FE"
@@ -620,7 +757,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                         "alignItems": "center",
                         "contents": [
                             {"type": "text", "text": s_name, "weight": "bold", "size": "sm", "color": "#1A1A1A", "flex": 1},
-                            {"type": "box", "layout": "horizontal", "contents": f_icons, "alignItems": "center", "spacing": "xs", "flex": 0}
+                            {"type": "box", "layout": "horizontal", "contents": f_icons, "alignItems": "center", "spacing": "xs", "flex": 0, "width": "96px"}
                         ]
                     },
                     {

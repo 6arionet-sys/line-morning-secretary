@@ -25,8 +25,20 @@ def build_fallback_text(weather_data, calendar_data, ai_summary, config):
     today_trash = weekly_schedule.get(w_ja)
     trash_str = today_trash.get("label", "なし") if today_trash else "なし"
     
+    try:
+        import jpholiday
+        today_date = now_jst.date()
+        if jpholiday.is_holiday(today_date):
+            day_type_suffix = f"・祝 {jpholiday.is_holiday_name(today_date)}"
+        elif now_jst.weekday() in (5, 6):
+            day_type_suffix = ""
+        else:
+            day_type_suffix = "・平日"
+    except Exception:
+        day_type_suffix = ""
+
     lines = [
-        f"☀️【{month}/{day}（{w_ja}）朝のまとめ】",
+        f"☀️【{month}/{day}（{w_ja}{day_type_suffix}）朝のまとめ】",
         "",
         f"📍 天気（{config.get('area_name', '東京')}）",
         f"・天気: {weather_data.get('raw_weather', '情報なし')}",
