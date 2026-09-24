@@ -14,7 +14,7 @@ def get_icon_url(icon_name, repo_name=None):
         icon_name = f"{icon_name}.png"
     return f"https://raw.githubusercontent.com/{repo_name}/main/icons/{icon_name}"
 
-def card_box(contents, border="#B85A0E", bg="#FFF", shadow="#3A2A1E", pad="12px", margin="lg"):
+def card_box(contents, border="#B85A0E", bg="#FFFFFF", shadow="#3A2A1E", pad="12px", margin="lg"):
     return {
         "type": "box",
         "layout": "vertical",
@@ -81,10 +81,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         ev_cnt = event_counts.get(curr_d, 0)
         dots = "●●" if ev_cnt >= 2 else ("●" if ev_cnt == 1 else " ")
         
-        bg = "#FFF" if is_today else "#FFFFFF33"
-        c = "#E03131" if is_today else "#FFF"
+        bg = "#FFFFFF" if is_today else "#FFFFFF33"
+        c = "#E03131" if is_today else "#FFFFFF"
         bw = "2px" if is_today else "0px"
-        bc = "#E03131" if is_today else "#0000"
+        bc = "#E03131" if is_today else "#00000000"
         
         week_cells.append({
             "type": "box",
@@ -120,11 +120,11 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{month}.{day} {w_en}", "size": "sm", "weight": "bold", "color": "#FFFA"},
+                    {"type": "text", "text": f"{month}.{day} {w_en}", "size": "sm", "weight": "bold", "color": "#FFFFFFE6"},
                     {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "24px", "align": "end"}
                 ]
             },
-            {"type": "text", "text": "おはようございます", "size": "xl", "weight": "bold", "color": "#FFF", "margin": "xs"},
+            {"type": "text", "text": "おはようございます", "size": "xl", "weight": "bold", "color": "#FFFFFF", "margin": "xs"},
             {"type": "box", "layout": "horizontal", "spacing": "xs", "margin": "md", "contents": week_cells}
         ]
     }
@@ -145,7 +145,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "contents": [
                 {"type": "image", "url": get_icon_url("sunny", repo_name), "size": "20px"},
                 {"type": "text", "text": " 天気", "weight": "bold", "size": "md", "color": "#8A4B1A"},
-                {"type": "text", "text": config.get("area_name", "横浜"), "size": "xs", "color": "#888", "align": "end"}
+                {"type": "text", "text": config.get("area_name", "横浜"), "size": "xs", "color": "#888888", "align": "end"}
             ]
         },
         # 天気メイン枠
@@ -153,7 +153,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "horizontal",
             "margin": "sm",
-            "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FFF", "endColor": "#D9EEFC"},
+            "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FFFFFF", "endColor": "#D9EEFC"},
             "cornerRadius": "10px",
             "borderWidth": "1px",
             "borderColor": "#BCE0F8",
@@ -189,9 +189,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "baseline",
             "margin": "sm",
             "contents": [
-                {"type": "text", "text": "最高", "size": "xs", "color": "#888"},
+                {"type": "text", "text": "最高", "size": "xs", "color": "#888888"},
                 {"type": "text", "text": f" {weather_data.get('temp_max', '--')}°", "size": "xl", "weight": "bold", "color": "#E0561B"},
-                {"type": "text", "text": "   最低", "size": "xs", "color": "#888", "margin": "md"},
+                {"type": "text", "text": "   最低", "size": "xs", "color": "#888888", "margin": "md"},
                 {"type": "text", "text": f" {weather_data.get('temp_min', '--')}°", "size": "md", "weight": "bold", "color": "#2E6FB5"}
             ]
         },
@@ -237,9 +237,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "type": "box",
                     "layout": "horizontal",
                     "contents": [
-                        {"type": "text", "text": pops.get("6-12", "-"), "size": "xs", "weight": "bold", "color": "#333", "align": "center", "flex": 1},
-                        {"type": "text", "text": pops.get("12-18", "-"), "size": "xs", "weight": "bold", "color": "#333", "align": "center", "flex": 1},
-                        {"type": "text", "text": pops.get("18-24", "-"), "size": "xs", "weight": "bold", "color": "#2E6FB5" if "50" in pops.get("18-24", "") else "#333", "align": "center", "flex": 1}
+                        {"type": "text", "text": pops.get("6-12", "-"), "size": "xs", "weight": "bold", "color": "#333333", "align": "center", "flex": 1},
+                        {"type": "text", "text": pops.get("12-18", "-"), "size": "xs", "weight": "bold", "color": "#333333", "align": "center", "flex": 1},
+                        {"type": "text", "text": pops.get("18-24", "-"), "size": "xs", "weight": "bold", "color": "#2E6FB5" if "50" in pops.get("18-24", "") else "#333333", "align": "center", "flex": 1}
                     ]
                 }
             ]
@@ -311,7 +311,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "paddingTop": "6px",
                     "paddingBottom": "6px",
                     "justifyContent": "center",
-                    "contents": [{"type": "text", "text": "☁ 気象庁で詳しく見る 〉", "size": "xs", "weight": "bold", "color": "#FFF", "align": "center"}]
+                    "contents": [{"type": "text", "text": "☁ 気象庁で詳しく見る 〉", "size": "xs", "weight": "bold", "color": "#FFFFFF", "align": "center"}]
                 }
             ]
         }
@@ -326,10 +326,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         is_today = (curr_d == now.date())
         t_info = weekly_schedule.get(w_k)
         
-        bg = "#FFA94D" if is_today else "#FFF"
+        bg = "#FFA94D" if is_today else "#FFFFFF"
         bc = "#E8590C" if is_today else "#FFD8A8"
         bw = "2px" if is_today else "1px"
-        c = "#FFF" if is_today else "#8A4B1A"
+        c = "#FFFFFF" if is_today else "#8A4B1A"
         lbl = "今日" if is_today else (t_info["short"] if t_info else "ー")
         
         cell_inner = [
@@ -422,7 +422,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "baseline",
             "margin": "sm",
-            "contents": [{"type": "text", "text": "今日", "color": "#FFF", "size": "xs", "weight": "bold", "align": "center"}],
+            "contents": [{"type": "text", "text": "今日", "color": "#FFFFFF", "size": "xs", "weight": "bold", "align": "center"}],
             "backgroundColor": "#2F78C8",
             "cornerRadius": "10px",
             "paddingStart": "8px", "paddingEnd": "8px", "paddingTop": "2px", "paddingBottom": "2px",
@@ -446,7 +446,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 ]
             })
     else:
-        cal_contents.append({"type": "text", "text": "今日の予定はありません", "size": "xs", "color": "#888", "margin": "xs"})
+        cal_contents.append({"type": "text", "text": "今日の予定はありません", "size": "xs", "color": "#888888", "margin": "xs"})
     
     if cal_tomorrow:
         cal_contents.append({
@@ -469,8 +469,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "alignItems": "center",
                 "contents": [
                     {"type": "text", "text": "●", "size": "xs", "color": "#6FA9EA"},
-                    {"type": "text", "text": t_str, "size": "xs", "color": "#555", "margin": "xs"},
-                    {"type": "text", "text": title_str, "size": "xs", "color": "#333", "margin": "sm", "wrap": True}
+                    {"type": "text", "text": t_str, "size": "xs", "color": "#555555", "margin": "xs"},
+                    {"type": "text", "text": title_str, "size": "xs", "color": "#333333", "margin": "sm", "wrap": True}
                 ]
             })
     
@@ -479,8 +479,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "baseline",
             "margin": "md",
-            "contents": [{"type": "text", "text": "この先1週間", "color": "#666", "size": "xxs", "weight": "bold", "align": "center"}],
-            "backgroundColor": "#EEE",
+            "contents": [{"type": "text", "text": "この先1週間", "color": "#666666", "size": "xxs", "weight": "bold", "align": "center"}],
+            "backgroundColor": "#EEEEEE",
             "cornerRadius": "8px",
             "paddingStart": "6px", "paddingEnd": "6px", "paddingTop": "2px", "paddingBottom": "2px",
             "width": "68px"
@@ -491,8 +491,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "layout": "horizontal",
                 "margin": "xs",
                 "contents": [
-                    {"type": "text", "text": "•", "size": "xs", "color": "#999"},
-                    {"type": "text", "text": ev, "size": "xxs", "color": "#666", "margin": "xs", "wrap": True}
+                    {"type": "text", "text": "•", "size": "xs", "color": "#999999"},
+                    {"type": "text", "text": ev, "size": "xxs", "color": "#666666", "margin": "xs", "wrap": True}
                 ]
             })
     
@@ -514,13 +514,13 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "paddingTop": "6px",
                 "paddingBottom": "6px",
                 "justifyContent": "center",
-                "contents": [{"type": "text", "text": "📅 カレンダーを開く 〉", "size": "xs", "weight": "bold", "color": "#FFF", "align": "center"}]
+                "contents": [{"type": "text", "text": "📅 カレンダーを開く 〉", "size": "xs", "weight": "bold", "color": "#FFFFFF", "align": "center"}]
             }
         ]
     })
     body_contents.append(card_box(cal_contents, border="#123F73", shadow="#3A2A1E"))
     
-    # --- [5] 釣りカード ---
+    # --- [5] 釣りカード（城ヶ島のみ） ---
     fishing_spots = weather_data.get("fishing_spots", [])
     if fishing_spots:
         fish_contents = [
@@ -540,7 +540,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         
         ai_hobbies = {h.get("name"): h for h in ai_summary.get("hobbies", [])}
         for spot in fishing_spots:
-            s_name = spot.get("name", "釣り場")
+            s_name = spot.get("name", "城ヶ島")
             sc = ai_hobbies.get(s_name, {}).get("score", 4)
             cm = ai_hobbies.get(s_name, {}).get("comment", "朝は穏やか。昼から風が強まるので早めに")
             
@@ -553,7 +553,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             
             is_high = spot.get("is_high_wave", False)
             w_bg = "#E03131" if is_high else "#E1F0FA"
-            w_c = "#FFF" if is_high else "#0C5A75"
+            w_c = "#FFFFFF" if is_high else "#0C5A75"
             
             fish_contents.append({
                 "type": "box",
@@ -583,7 +583,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                             {
                                 "type": "box",
                                 "layout": "horizontal",
-                                "backgroundColor": "#FFF",
+                                "backgroundColor": "#FFFFFF",
                                 "cornerRadius": "10px",
                                 "borderWidth": "1px",
                                 "borderColor": "#CED4DA",
@@ -608,7 +608,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                             }
                         ]
                     },
-                    {"type": "text", "text": cm, "size": "xxs", "color": "#333", "margin": "xs", "wrap": True}
+                    {"type": "text", "text": cm, "size": "xxs", "color": "#333333", "margin": "xs", "wrap": True}
                 ]
             })
         
