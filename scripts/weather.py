@@ -48,7 +48,7 @@ def parse_direction(wind_text):
             strength = " やや強く"
         elif "強く" in wind_text:
             strength = " 強く"
-        return icon, f"{name}の風{strength}"
+        return "wind", f"{name}の風{strength}"
     else:
         first_icon, first_name = found[0]
         last_icon, last_name = found[-1]
@@ -57,7 +57,7 @@ def parse_direction(wind_text):
             strength = " やや強く"
         elif "強く" in wind_text:
             strength = " 強く"
-        return first_icon, f"{first_name} → {last_name}{strength}"
+        return "wind", f"{first_name}のち{last_name}{strength}"
 
 def parse_wave(wave_text):
     """
@@ -87,25 +87,92 @@ def get_weather_type(weather_text, max_pop=0):
         return 'sunny'
     if '雪' in weather_text:
         return 'snowy'
-    if '雨' in weather_text or max_pop >= 50:
+    if max_pop >= 50:
+        return 'rainy'
+    if '雨' in weather_text and max_pop >= 40:
         return 'rainy'
     if 'くもり' in weather_text or '曇' in weather_text or max_pop >= 30:
         return 'cloudy'
     return 'sunny'
 
+def get_period_weather_type(period, raw_weather, pop_val):
+    """
+    時間帯 (6-12, 12-18, 18-24) と降水確率、天気文章から時間帯の天気を判定する。
+    POPが低い（<=20%）時は雨判定にせず、曇りや晴れにする。
+    """
+    if pop_val >= 50:
+        return 'rainy'
+    if '雪' in raw_weather and pop_val >= 30:
+        return 'snowy'
+        
+    w_clean = raw_weather.replace("一時", "時々")
+    
+    # 晴れ のち くもり / 雨
+    if "晴" in w_clean and ("くもり" in w_clean or "曇" in w_clean or "雨" in w_clean):
+        pos_s = w_clean.find("晴")
+        pos_other = min([w_clean.find(k) for k in ["くもり", "曇", "雨"] if k in w_clean])
+        if pos_s < pos_other:
+            # 晴れのち...
+            if period == "6-12":
+                return "sunny"
+            elif period == "12-18":
+                return "rainy" if (pop_val >= 40 and "雨" in w_clean) else "cloudy"
+            else: # 18-24
+                return "rainy" if (pop_val >= 40 and "雨" in w_clean) else "cloudy"
+        else:
+            # くもりのち晴れ
+            if period == "6-12":
+                return "cloudy"
+            else:
+                return "sunny" if pop_val <= 20 else "cloudy"
+                
+    if "くもり" in w_clean or "曇" in w_clean:
+        if "雨" in w_clean and pop_val >= 40:
+            return "rainy"
+        return "cloudy"
+        
+    if "雨" in w_clean and pop_val >= 40:
+        return "rainy"
+        
+    if pop_val <= 20:
+        return "sunny" if "晴" in w_clean else "cloudy"
+    elif pop_val <= 40:
+        return "cloudy"
+    else:
+        return "rainy"
+
 def simplify_weather(weather_text):
     """
-    長い気象庁の天気をカード用に8文字程度に短縮する。
-    例: '晴れ　夜遅く　くもり' -> '晴れ のち 曇り'
+    長い気象庁の天気をカード用に自然な短縮形に変換する。
+    例: 'くもり　昼過ぎから夕方晴れ　所により夜雨' -> 'くもりのち晴れ'
+    例: '晴れ　夜遅くくもり' -> '晴れのちくもり'
     """
     if not weather_text:
         return "晴れ"
     t = weather_text.replace('\u3000', ' ').strip()
-    t = re.sub(r'所により|一時|遅く|朝晩|夕方', '', t).strip()
-    t = re.sub(r'\s+', ' ', t)
-    if len(t) > 10:
-        t = t[:10]
-    return t
+    
+    clean = re.sub(r'昼過ぎから夕方|昼前から夕方|昼過ぎから|昼前から|明け方から|夜遅く|夜遅くから|未明|朝晩|夕方|昼過ぎ|昼前|所により|時々|一時|後|のち', ' ', t)
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    
+    words = clean.split()
+    main_types = []
+    for w in words:
+        if '晴' in w and 'sunny' not in [x[0] for x in main_types]:
+            main_types.append(('sunny', '晴れ'))
+        elif ('くもり' in w or '曇' in w) and 'cloudy' not in [x[0] for x in main_types]:
+            main_types.append(('cloudy', 'くもり'))
+        elif ('雨' in w or '雷' in w) and 'rainy' not in [x[0] for x in main_types]:
+            main_types.append(('rainy', '雨'))
+        elif '雪' in w and 'snowy' not in [x[0] for x in main_types]:
+            main_types.append(('snowy', '雪'))
+            
+    if not main_types:
+        return t[:8]
+    if len(main_types) == 1:
+        return main_types[0][1]
+    else:
+        connector = '時々' if ('時々' in t or '一時' in t) else 'のち'
+        return f"{main_types[0][1]}{connector}{main_types[1][1]}"
 
 def fetch_weather_data(area_code, sub_area="東部", temp_area="横浜", fishing_spots=None):
     """
@@ -220,7 +287,7 @@ def fetch_weather_data(area_code, sub_area="東部", temp_area="横浜", fishing
     # 各時間帯の天気タイプ
     for period in ["6-12", "12-18", "18-24"]:
         p_val = int(re.findall(r'\d+', pops_by_period[period])[0]) if re.findall(r'\d+', pops_by_period[period]) else 0
-        weather_by_period[period] = get_weather_type(raw_weather, p_val)
+        weather_by_period[period] = get_period_weather_type(period, raw_weather, p_val)
     
     main_weather_type = get_weather_type(raw_weather, max_pop)
     

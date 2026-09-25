@@ -226,16 +226,20 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     
     # 天気グラデーション判定（案3：ゴールデンアンバーテーマ）
     w_clean = short_w.replace("一時", "時々")
+    first_w_icon = "cloudy"
+    second_w_icon = None
     if ("晴" in w_clean) and ("くもり" in w_clean or "曇" in w_clean):
         pos_s = w_clean.find("晴")
         pos_c = min([w_clean.find(k) for k in ["くもり", "曇"] if k in w_clean])
         if pos_s < pos_c:
             # 晴れのち曇り / 晴れ時々曇り
             wbox_start, wbox_end, wbox_border = "#FFD43B", "#E9ECEF", "#CED4DA"
+            first_w_icon = "sunny"
             second_w_icon = "cloudy"
         else:
             # 曇りのち晴れ / 曇り時々晴れ
             wbox_start, wbox_end, wbox_border = "#E9ECEF", "#FFD43B", "#FCC419"
+            first_w_icon = "cloudy"
             second_w_icon = "sunny"
     elif ("晴" in w_clean) and ("雨" in w_clean):
         pos_s = w_clean.find("晴")
@@ -243,24 +247,30 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         if pos_s < pos_r:
             # 晴れのち雨
             wbox_start, wbox_end, wbox_border = "#FFD43B", "#99E9F2", "#66D9E8"
+            first_w_icon = "sunny"
             second_w_icon = "rainy"
         else:
             # 雨のち晴れ
             wbox_start, wbox_end, wbox_border = "#99E9F2", "#FFD43B", "#66D9E8"
+            first_w_icon = "rainy"
             second_w_icon = "sunny"
     elif ("くもり" in w_clean or "曇" in w_clean) and ("雨" in w_clean):
         # 曇りのち雨
         wbox_start, wbox_end, wbox_border = "#DEE2E6", "#A5D8FF", "#74C0FC"
+        first_w_icon = "cloudy"
         second_w_icon = "rainy"
-    elif "雨" in w_clean or max_pop >= 40:
+    elif "雨" in w_clean or max_pop >= 50:
         wbox_start, wbox_end, wbox_border = "#E7F5FF", "#A5D8FF", "#74C0FC"
-        second_w_icon = "rainy"
+        first_w_icon = "rainy"
+        second_w_icon = None
     elif "くもり" in w_clean or "曇" in w_clean:
         wbox_start, wbox_end, wbox_border = "#F8F9FA", "#DEE2E6", "#CED4DA"
-        second_w_icon = "cloudy"
+        first_w_icon = "cloudy"
+        second_w_icon = None
     else:
         wbox_start, wbox_end, wbox_border = "#FFE066", "#FF922B", "#F76707"
-        second_w_icon = "sunny"
+        first_w_icon = "sunny"
+        second_w_icon = None
     
     def get_seg_colors(w_type):
         if w_type == "sunny":
@@ -275,6 +285,18 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     c1_s, c1_e = get_seg_colors(weather_periods.get("6-12", "sunny"))
     c2_s, c2_e = get_seg_colors(weather_periods.get("12-18", "cloudy"))
     c3_s, c3_e = get_seg_colors(weather_periods.get("18-24", "rainy"))
+
+    # メイン天気のアイコン表示 (同種天気なら1つだけ、遷移なら矢印付きで2つ)
+    if second_w_icon and second_w_icon != first_w_icon:
+        w_icon_contents = [
+            {"type": "image", "url": get_icon_url(first_w_icon, repo_name), "size": "32px", "flex": 0},
+            {"type": "image", "url": get_icon_url("arrow_right", repo_name), "size": "12px", "margin": "xs", "flex": 0},
+            {"type": "image", "url": get_icon_url(second_w_icon, repo_name), "size": "32px", "margin": "xs", "flex": 0}
+        ]
+    else:
+        w_icon_contents = [
+            {"type": "image", "url": get_icon_url(first_w_icon, repo_name), "size": "38px", "flex": 0}
+        ]
 
     weather_contents = [
         {
@@ -305,11 +327,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                     "layout": "horizontal",
                     "alignItems": "center",
                     "flex": 0,
-                    "contents": [
-                        {"type": "image", "url": get_icon_url("sunny" if "晴" in short_w else "cloudy", repo_name), "size": "32px", "flex": 0},
-                        {"type": "image", "url": get_icon_url("arrow_right", repo_name), "size": "12px", "margin": "xs", "flex": 0},
-                        {"type": "image", "url": get_icon_url(second_w_icon, repo_name), "size": "32px", "margin": "xs", "flex": 0}
-                    ]
+                    "contents": w_icon_contents
                 },
                 {
                     "type": "box",
@@ -342,15 +360,6 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "vertical",
             "margin": "sm",
             "contents": [
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
-                        {"type": "image", "url": get_icon_url(weather_periods.get("6-12", "sunny"), repo_name), "size": "18px", "align": "center"},
-                        {"type": "image", "url": get_icon_url(weather_periods.get("12-18", "cloudy"), repo_name), "size": "18px", "align": "center"},
-                        {"type": "image", "url": get_icon_url(weather_periods.get("18-24", "rainy"), repo_name), "size": "18px", "align": "center"}
-                    ]
-                },
                 {
                     "type": "box",
                     "layout": "horizontal",
@@ -479,20 +488,24 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         is_today = (curr_d == now.date())
         t_info = weekly_schedule.get(w_k)
         
+        if t_info:
+            t_icon = t_info.get("icon", "flame")
+            icon_name = f"{t_icon}_white" if (is_today and t_icon == "flame") else t_icon
+            lbl = "今日" if is_today else t_info.get("short", "ゴミ")
+        else:
+            icon_name = None
+            lbl = "今日" if is_today else "ー"
+
         if is_today:
             bg = "#FF922B"
             bc = "#D9480F"
             bw = "1.5px"
             tc = "#FFFFFF"
-            lbl = "今日"
-            icon_name = "flame_white" if (t_info and t_info.get("icon") == "flame") else (t_info.get("icon", "flame") if t_info else "flame_white")
         else:
             bg = "#FFFFFF"
             bc = "#FFD8A8"
             bw = "1px"
             tc = "#8A4B1A"
-            lbl = (t_info["short"] if t_info else "ー")
-            icon_name = t_info.get("icon", "flame") if t_info else None
         
         cell_inner = [
             {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": tc, "align": "center"}
@@ -500,7 +513,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         if icon_name:
             cell_inner.append({"type": "image", "url": get_icon_url(icon_name, repo_name), "size": "16px", "align": "center", "margin": "xs"})
         else:
-            cell_inner.append({"type": "text", "text": "ー", "size": "xs", "color": "#DDAA88", "align": "center", "margin": "xs"})
+            cell_inner.append({"type": "text", "text": "ー", "size": "xs", "color": tc if is_today else "#DDAA88", "align": "center", "margin": "xs"})
         cell_inner.append({"type": "text", "text": lbl, "size": "xxs", "weight": "bold" if is_today else "regular", "color": tc, "align": "center", "margin": "xs"})
         
         trash_cells.append({
@@ -517,6 +530,34 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "contents": cell_inner
         })
     
+    if today_trash:
+        t_icon = today_trash.get("icon", "flame")
+        sphere_icon = "trash_sphere" if t_icon == "flame" else f"trash_{t_icon}"
+        trash_main_row = {
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "md",
+            "alignItems": "center",
+            "contents": [
+                {"type": "image", "url": get_icon_url(sphere_icon, repo_name), "size": "44px", "flex": 0},
+                {"type": "text", "text": today_trash.get("label", "ゴミ出しの日"), "weight": "bold", "size": "lg", "color": "#4E2A14", "margin": "md", "flex": 1, "wrap": True}
+            ]
+        }
+    else:
+        # ゴミ出しがない日は炎アイコンを出さず、落ち着いたテキストのみを表示
+        trash_main_row = {
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "md",
+            "paddingTop": "6px",
+            "paddingBottom": "6px",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "contents": [
+                {"type": "text", "text": "本日のゴミ出しはありません", "weight": "bold", "size": "md", "color": "#78350F", "align": "center", "flex": 1}
+            ]
+        }
+
     trash_contents = [
         {
             "type": "box",
@@ -527,16 +568,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 {"type": "text", "text": " ゴミ", "weight": "bold", "size": "md", "color": "#5C2607", "margin": "xs", "flex": 0}
             ]
         },
-        {
-            "type": "box",
-            "layout": "horizontal",
-            "margin": "md",
-            "alignItems": "center",
-            "contents": [
-                {"type": "image", "url": get_icon_url("trash_sphere", repo_name), "size": "44px", "flex": 0},
-                {"type": "text", "text": today_trash.get("label", "ゴミ出しなし") if today_trash else "本日のゴミ出しはありません", "weight": "bold", "size": "lg", "color": "#4E2A14", "margin": "md", "flex": 1, "wrap": True}
-            ]
-        },
+        trash_main_row,
         {"type": "box", "layout": "horizontal", "spacing": "xs", "margin": "md", "contents": trash_cells}
     ]
     trash_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#FFF5ED", "endColor": "#FFE7D6"}
@@ -777,7 +809,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                                 "alignItems": "center",
                                 "flex": 0,
                                 "contents": [
-                                    {"type": "image", "url": get_icon_url(spot.get("wind_icon", "wind"), repo_name), "size": "12px", "flex": 0},
+                                    {"type": "image", "url": get_icon_url("wind", repo_name), "size": "14px", "flex": 0},
                                     {"type": "text", "text": f" {w_lbl}", "size": "xxs", "color": "#495057", "margin": "xs", "flex": 0}
                                 ]
                             },
