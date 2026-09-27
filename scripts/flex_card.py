@@ -53,11 +53,13 @@ def get_icon_url(icon_name, repo_name=None):
         icon_name = f"{icon_name}.png"
     return f"https://raw.githubusercontent.com/{repo_name}/main/icons/v2/{icon_name}"
 
-def card_box(contents, border="#B85A0E", bg="#FFFFFF", bg_gradient=None, shadow="#3A2A1E", pad="12px", margin="lg"):
+def card_box(contents, border="#B85A0E", bg="#FFFFFF", bg_gradient=None, shadow=None, pad="12px", margin="lg"):
+    if shadow is None:
+        shadow = border
     inner_box = {
         "type": "box",
         "layout": "vertical",
-        "cornerRadius": "14px",
+        "cornerRadius": "16px",
         "borderWidth": "1.5px",
         "borderColor": border,
         "paddingAll": pad,
@@ -72,9 +74,8 @@ def card_box(contents, border="#B85A0E", bg="#FFFFFF", bg_gradient=None, shadow=
         "type": "box",
         "layout": "vertical",
         "backgroundColor": shadow,
-        "cornerRadius": "16px",
-        "paddingBottom": "3.5px",
-        "paddingEnd": "2.5px",
+        "cornerRadius": "18px",
+        "paddingBottom": "4px",
         "margin": margin,
         "contents": [inner_box]
     }
@@ -316,7 +317,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "layout": "horizontal",
             "margin": "sm",
             "background": {"type": "linearGradient", "angle": "90deg", "startColor": wbox_start, "endColor": wbox_end},
-            "cornerRadius": "12px",
+            "cornerRadius": "14px",
             "borderWidth": "1px",
             "borderColor": wbox_border,
             "paddingAll": "10px",
@@ -462,7 +463,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "margin": "md",
             "backgroundColor": "#8A2E0A",
             "cornerRadius": "16px",
-            "paddingBottom": "2px",
+            "paddingBottom": "3px",
             "action": {"type": "uri", "label": "気象庁", "uri": f"https://www.jma.go.jp/bosai/forecast/#area_type=offices&area_code={config.get('area_code', '140000')}"},
             "contents": [
                 {
@@ -478,7 +479,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             ]
         }
     ]
-    body_contents.append(card_box(weather_contents, border="#E58C3A", shadow="#5C3A21"))
+    body_contents.append(card_box(weather_contents, border="#B85A0E", shadow="#B85A0E"))
     
     # --- [3] ゴミカード ---
     trash_cells = []
@@ -497,38 +498,51 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             lbl = "今日" if is_today else "ー"
 
         if is_today:
-            bg = "#FF922B"
-            bc = "#D9480F"
-            bw = "1.5px"
-            tc = "#FFFFFF"
+            cell_inner = [
+                {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": "#FFFFFF", "align": "center"}
+            ]
+            if icon_name:
+                cell_inner.append({"type": "image", "url": get_icon_url(icon_name, repo_name), "size": "16px", "align": "center", "margin": "xs"})
+            else:
+                cell_inner.append({"type": "text", "text": "ー", "size": "xs", "color": "#FFFFFF", "align": "center", "margin": "xs"})
+            cell_inner.append({"type": "text", "text": lbl, "size": "xxs", "weight": "bold", "color": "#FFFFFF", "align": "center", "margin": "xs"})
+            
+            trash_cells.append({
+                "type": "box",
+                "layout": "vertical",
+                "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FB923C", "endColor": "#EA580C"},
+                "cornerRadius": "10px",
+                "borderWidth": "1.5px",
+                "borderColor": "#C2410C",
+                "paddingTop": "5px",
+                "paddingBottom": "5px",
+                "alignItems": "center",
+                "flex": 1,
+                "contents": cell_inner
+            })
         else:
-            bg = "#FFFFFF"
-            bc = "#FFD8A8"
-            bw = "1px"
-            tc = "#8A4B1A"
-        
-        cell_inner = [
-            {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": tc, "align": "center"}
-        ]
-        if icon_name:
-            cell_inner.append({"type": "image", "url": get_icon_url(icon_name, repo_name), "size": "16px", "align": "center", "margin": "xs"})
-        else:
-            cell_inner.append({"type": "text", "text": "ー", "size": "xs", "color": tc if is_today else "#DDAA88", "align": "center", "margin": "xs"})
-        cell_inner.append({"type": "text", "text": lbl, "size": "xxs", "weight": "bold" if is_today else "regular", "color": tc, "align": "center", "margin": "xs"})
-        
-        trash_cells.append({
-            "type": "box",
-            "layout": "vertical",
-            "backgroundColor": bg,
-            "cornerRadius": "8px",
-            "borderWidth": bw,
-            "borderColor": bc,
-            "paddingTop": "4px",
-            "paddingBottom": "4px",
-            "alignItems": "center",
-            "flex": 1,
-            "contents": cell_inner
-        })
+            cell_inner = [
+                {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": "#8A4B1A", "align": "center"}
+            ]
+            if icon_name:
+                cell_inner.append({"type": "image", "url": get_icon_url(icon_name, repo_name), "size": "16px", "align": "center", "margin": "xs"})
+            else:
+                cell_inner.append({"type": "text", "text": "ー", "size": "xs", "color": "#DDAA88", "align": "center", "margin": "xs"})
+            cell_inner.append({"type": "text", "text": lbl, "size": "xxs", "color": "#8A4B1A", "align": "center", "margin": "xs"})
+            
+            trash_cells.append({
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#FFFFFF",
+                "cornerRadius": "10px",
+                "borderWidth": "1px",
+                "borderColor": "#FED7AA",
+                "paddingTop": "5px",
+                "paddingBottom": "5px",
+                "alignItems": "center",
+                "flex": 1,
+                "contents": cell_inner
+            })
     
     if today_trash:
         t_icon = today_trash.get("icon", "flame")
@@ -571,8 +585,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         trash_main_row,
         {"type": "box", "layout": "horizontal", "spacing": "xs", "margin": "md", "contents": trash_cells}
     ]
-    trash_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#FFF5ED", "endColor": "#FFE7D6"}
-    body_contents.append(card_box(trash_contents, border="#D96520", bg_gradient=trash_gradient, shadow="#5C3A21"))
+    trash_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#FFEAD9", "endColor": "#FFCBA4"}
+    body_contents.append(card_box(trash_contents, border="#8A2E0A", bg_gradient=trash_gradient, shadow="#8A2E0A"))
     
     # --- [4] 予定カード ---
     cal_today = calendar_data.get("today", [])
@@ -642,11 +656,13 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "baseline",
             "margin": "md",
-            "contents": [{"type": "text", "text": "明日", "color": "#1E40AF", "size": "xxs", "weight": "bold", "align": "center"}],
-            "backgroundColor": "#DBEAFE",
-            "cornerRadius": "8px",
-            "paddingStart": "6px", "paddingEnd": "6px", "paddingTop": "2px", "paddingBottom": "2px",
-            "width": "38px"
+            "contents": [{"type": "text", "text": "明日", "color": "#2563EB", "size": "xxs", "weight": "bold", "align": "center"}],
+            "backgroundColor": "#FFFFFF",
+            "cornerRadius": "10px",
+            "borderWidth": "1px",
+            "borderColor": "#BFDBFE",
+            "paddingStart": "8px", "paddingEnd": "8px", "paddingTop": "2px", "paddingBottom": "2px",
+            "width": "42px"
         })
         for ev in cal_tomorrow:
             ev = (ev or "").strip()
@@ -686,11 +702,11 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "type": "box",
             "layout": "baseline",
             "margin": "md",
-            "contents": [{"type": "text", "text": "この先1週間", "color": "#4B5563", "size": "xxs", "weight": "bold", "align": "center"}],
-            "backgroundColor": "#E5E7EB",
-            "cornerRadius": "8px",
-            "paddingStart": "6px", "paddingEnd": "6px", "paddingTop": "2px", "paddingBottom": "2px",
-            "width": "68px"
+            "contents": [{"type": "text", "text": "この先1週間", "color": "#64748B", "size": "xxs", "weight": "bold", "align": "center"}],
+            "backgroundColor": "#F1F5F9",
+            "cornerRadius": "10px",
+            "paddingStart": "8px", "paddingEnd": "8px", "paddingTop": "2px", "paddingBottom": "2px",
+            "width": "72px"
         })
         for ev in cal_week:
             ev = (ev or "").strip()
@@ -712,9 +728,9 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         "type": "box",
         "layout": "vertical",
         "margin": "md",
-        "backgroundColor": "#1E40AF",
+        "backgroundColor": "#123F73",
         "cornerRadius": "16px",
-        "paddingBottom": "2px",
+        "paddingBottom": "3px",
         "action": {"type": "uri", "label": "カレンダー", "uri": "https://calendar.google.com/calendar/"},
         "contents": [
             {
@@ -729,8 +745,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             }
         ]
     })
-    cal_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#F3F8FE", "endColor": "#E4EFFD"}
-    body_contents.append(card_box(cal_contents, border="#4A90E2", bg_gradient=cal_gradient, shadow="#1B3B60"))
+    cal_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#F4FAFE", "endColor": "#D1E3F8"}
+    body_contents.append(card_box(cal_contents, border="#123F73", bg_gradient=cal_gradient, shadow="#123F73"))
     
     # --- [5] 釣りカード（城ヶ島のみ） ---
     fishing_spots = weather_data.get("fishing_spots", [])
@@ -777,10 +793,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "vertical",
                 "backgroundColor": "#FFFFFF",
-                "cornerRadius": "10px",
-                "borderWidth": "1px",
-                "borderColor": "#BCE3EC",
-                "paddingAll": "10px",
+                "cornerRadius": "14px",
+                "borderWidth": "1.5px",
+                "borderColor": "#A5F3FC",
+                "paddingAll": "12px",
                 "margin": "sm",
                 "contents": [
                     {
@@ -832,8 +848,8 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 ]
             })
         
-        fish_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#F0FBFC", "endColor": "#D8F3F7"}
-        body_contents.append(card_box(fish_contents, border="#2BB0C7", bg_gradient=fish_gradient, shadow="#0E4A59"))
+        fish_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#F2FCFE", "endColor": "#C3EAF7"}
+        body_contents.append(card_box(fish_contents, border="#0C5A75", bg_gradient=fish_gradient, shadow="#0C5A75"))
     
     # 出典表記
     body_contents.append({

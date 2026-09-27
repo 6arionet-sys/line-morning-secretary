@@ -33,7 +33,7 @@ def build_fallback_text(weather_data, calendar_data, ai_summary, config):
         elif now_jst.weekday() in (5, 6):
             day_type_suffix = ""
         else:
-            day_type_suffix = "・平日"
+            day_type_suffix = ""
     except Exception:
         day_type_suffix = ""
 
