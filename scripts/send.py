@@ -158,6 +158,18 @@ def main():
             "fishing_spots": []
         }
     
+    # 動画撮影用：天気を「晴れのち曇り」に設定
+    weather_data["short_weather"] = "晴れのち曇り"
+    weather_data["raw_weather"] = "晴れ 昼過ぎから くもり"
+    weather_data["rain_notice"] = "傘なしでお出かけOK"
+    weather_data["max_pop"] = 20
+    weather_data["pops"] = {"6-12": "0%", "12-18": "10%", "18-24": "20%"}
+    weather_data["weather_by_period"] = {"6-12": "sunny", "12-18": "sunny", "18-24": "cloudy"}
+    weather_data["temp_max"] = "26"
+    weather_data["temp_min"] = "18"
+    weather_data["umbrella"] = {"status": "傘はいらない", "icon": "umbrella_off", "desc": ""}
+    weather_data["laundry"] = {"status": "一日中OK", "icon": "hanger", "comment": "気持ちよく乾く"}
+    
     # 2. カレンダーの予定取得
     try:
         calendar_data = fetch_calendar_events(calendar_url)
