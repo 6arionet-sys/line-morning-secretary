@@ -75,7 +75,8 @@ def card_box(contents, border="#B85A0E", bg="#FFFFFF", bg_gradient=None, shadow=
         "layout": "vertical",
         "backgroundColor": shadow,
         "cornerRadius": "18px",
-        "paddingBottom": "4px",
+        "paddingBottom": "5px",
+        "paddingEnd": "4px",
         "margin": margin,
         "contents": [inner_box]
     }
@@ -118,7 +119,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     else:
         clothing_text = "日中は快適。朝晩は薄手の上着を"
     
-    trash_str = today_trash['label'] if today_trash else "ゴミ出しなし"
+    trash_str = f"{today_trash['label']}(8:30まで)" if today_trash else "ゴミ出しなし"
     hol_suffix = f"・祝 {today_hol_name}" if is_today_hol else ""
     alt_text = f"【朝の秘書】{month}/{day}({w_ja}{hol_suffix}) {config.get('area_name', '横浜')} {weather_data.get('temp_max', '--')}℃ / {trash_str}"
     
@@ -510,19 +511,29 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             trash_cells.append({
                 "type": "box",
                 "layout": "vertical",
-                "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FB923C", "endColor": "#EA580C"},
-                "cornerRadius": "10px",
-                "borderWidth": "1.5px",
-                "borderColor": "#C2410C",
-                "paddingTop": "5px",
-                "paddingBottom": "5px",
-                "alignItems": "center",
+                "backgroundColor": "#8A2E0A",
+                "cornerRadius": "14px",
+                "paddingBottom": "3px",
                 "flex": 1,
-                "contents": cell_inner
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "background": {"type": "linearGradient", "angle": "180deg", "startColor": "#FD8A4E", "endColor": "#EA580C"},
+                        "cornerRadius": "12px",
+                        "borderWidth": "1px",
+                        "borderColor": "#C2410C",
+                        "paddingTop": "4px",
+                        "paddingBottom": "4px",
+                        "alignItems": "center",
+                        "contents": cell_inner
+                    }
+                ]
             })
         else:
+            day_c = "#D9480F" if i == 0 else ("#1971C2" if i == 6 else "#8A4B1A")
             cell_inner = [
-                {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": "#8A4B1A", "align": "center"}
+                {"type": "text", "text": w_k, "size": "xxs", "weight": "bold", "color": day_c, "align": "center"}
             ]
             if icon_name:
                 cell_inner.append({"type": "image", "url": get_icon_url(icon_name, repo_name), "size": "16px", "align": "center", "margin": "xs"})
@@ -534,10 +545,10 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
                 "type": "box",
                 "layout": "vertical",
                 "backgroundColor": "#FFFFFF",
-                "cornerRadius": "10px",
+                "cornerRadius": "14px",
                 "borderWidth": "1px",
                 "borderColor": "#FED7AA",
-                "paddingTop": "5px",
+                "paddingTop": "6px",
                 "paddingBottom": "5px",
                 "alignItems": "center",
                 "flex": 1,
@@ -554,7 +565,16 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
             "alignItems": "center",
             "contents": [
                 {"type": "image", "url": get_icon_url(sphere_icon, repo_name), "size": "44px", "flex": 0},
-                {"type": "text", "text": today_trash.get("label", "ゴミ出しの日"), "weight": "bold", "size": "lg", "color": "#4E2A14", "margin": "md", "flex": 1, "wrap": True}
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "md",
+                    "flex": 1,
+                    "contents": [
+                        {"type": "text", "text": today_trash.get("label", "ゴミ出しの日"), "weight": "bold", "size": "lg", "color": "#4E2A14", "wrap": True},
+                        {"type": "text", "text": "朝8:30までに出してください", "size": "xs", "weight": "bold", "color": "#8A4B1A", "margin": "xs"}
+                    ]
+                }
             ]
         }
     else:
@@ -585,7 +605,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
         trash_main_row,
         {"type": "box", "layout": "horizontal", "spacing": "xs", "margin": "md", "contents": trash_cells}
     ]
-    trash_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#FFEAD9", "endColor": "#FFCBA4"}
+    trash_gradient = {"type": "linearGradient", "angle": "180deg", "startColor": "#FFF8F0", "endColor": "#FFCBA4"}
     body_contents.append(card_box(trash_contents, border="#8A2E0A", bg_gradient=trash_gradient, shadow="#8A2E0A"))
     
     # --- [4] 予定カード ---

@@ -18,12 +18,12 @@
     }
   ],
   "weekly_schedule": {
-    "日": null,
-    "月": {
+    "日": {
       "label": "燃えるゴミの日",
       "short": "燃える",
       "icon": "flame"
     },
+    "月": null,
     "火": null,
     "水": {
       "label": "瓶・缶・ペットボトルの日",

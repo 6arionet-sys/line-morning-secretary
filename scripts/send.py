@@ -23,7 +23,7 @@ def build_fallback_text(weather_data, calendar_data, ai_summary, config):
     
     weekly_schedule = config.get("weekly_schedule", {})
     today_trash = weekly_schedule.get(w_ja)
-    trash_str = today_trash.get("label", "なし") if today_trash else "なし"
+    trash_str = f"{today_trash['label']}（朝8:30まで）" if today_trash else "なし"
     
     try:
         import jpholiday
