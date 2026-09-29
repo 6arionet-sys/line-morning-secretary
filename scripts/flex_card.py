@@ -557,7 +557,7 @@ def build_flex_message(weather_data, calendar_data, ai_summary, config, repo_nam
     
     if today_trash:
         t_icon = today_trash.get("icon", "flame")
-        sphere_icon = "trash_sphere" if t_icon == "flame" else f"trash_{t_icon}"
+        sphere_icon = "trash_sphere" if t_icon == "flame" else t_icon
         trash_main_row = {
             "type": "box",
             "layout": "horizontal",

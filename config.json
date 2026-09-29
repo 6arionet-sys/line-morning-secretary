@@ -18,27 +18,27 @@
     }
   ],
   "weekly_schedule": {
-    "日": {
+    "日": null,
+    "月": {
       "label": "燃えるゴミの日",
       "short": "燃える",
       "icon": "flame"
     },
-    "月": null,
-    "火": null,
-    "水": {
-      "label": "瓶・缶・ペットボトルの日",
+    "火": {
+      "label": "缶・瓶・ペットボトルの日",
       "short": "缶・瓶",
       "icon": "bottle"
     },
-    "木": {
+    "水": null,
+    "木": null,
+    "金": {
       "label": "燃えるゴミの日",
       "short": "燃える",
       "icon": "flame"
     },
-    "金": null,
     "土": {
-      "label": "資源ごみの日",
-      "short": "資源",
+      "label": "プラスチックゴミの日",
+      "short": "プラ",
       "icon": "recycle"
     }
   }
